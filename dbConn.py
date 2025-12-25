@@ -15,30 +15,57 @@ def get_ip(iface):
     return ""
 
 
-CONN = sqlite3.connect("icepi.db")
-cursor = CONN.cursor()
+class Interfaces:
+    def __init__(self, cursor: sqlite3.Cursor):
+        self.cursor = cursor
+        self.update_interfaces()
+
+    def update_interfaces(self):
+        ips = (
+            get_ip("wlan0"),
+            get_ip("ap0"),
+            get_ip("usb0")
+        )
+        self.cursor.execute("""
+            INSERT INTO interfaces (name, enabled, CONFIG) VALUES
+                ('wifi', 1, ?),
+                ('ap', 1, ?),
+                ('ethernet', 1, ?)
+            ON CONFLICT(name) DO UPDATE SET
+                CONFIG = excluded.CONFIG;
+            """, 
+                ips
+        )
+
+    def __getitem__(self, key: str) -> dict:
+        return dict(self.cursor.execute("SELECT * FROM interfaces where name=?", key).fetchone())
 
 
-def update_interfaces():
-    ips = (
-        get_ip("wlan0"),
-        get_ip("ap0"),
-        get_ip("usb0")
-    )
-    cursor.execute("""
-        INSERT INTO interfaces (name, enabled, CONFIG) VALUES
-            ('wifi', 1, ?),
-            ('ap', 1, ?),
-            ('ethernet', 1, ?)
-        ON CONFLICT(name) DO UPDATE SET
-            CONFIG = excluded.CONFIG;
-        """, 
-            ips
-    )
-    return ips
+    def __setitem__(self, interface: str, value: int) -> bool:
+        try:
+            self.cursor.execute("UPDATE interfaces set enabled=? where name = ?", (value, interface))
+            return True
+        except Exception as err:
+            print(err)
+            return False
 
-cursor.execute("Create TABLE IF NOT EXISTS interfaces(name TEXT PRIMARY KEY, enabled INT, CONFIG VARCHAR(16) )")
 
-cursor.execute("INSERT OR IGNORE INTO interfaces(name, enabled, CONFIG) values('storage', 0, '8gb'), ('hid', 1, '')")
-print(cursor.execute("SELECT name FROM sqlite_schema where type='table'").fetchall())
-print(cursor.execute("SELECT * FROM interfaces").fetchall())
+
+
+class DB:
+    def __init__(self):
+        self.CONN = sqlite3.connect("icepi.db")
+        self.CONN.row_factory = sqlite3.Row
+        self.cursor = self.CONN.cursor()
+        self.cursor.execute("Create TABLE IF NOT EXISTS interfaces(name TEXT VARCHAR(50), enabled INT, CONFIG VARCHAR(16) )")
+        self.cursor.execute("INSERT OR IGNORE INTO interfaces(name, enabled, CONFIG) values('storage', 0, '8gb'), ('hid', 1, '')")
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS settings(key varchar(255) PRIMARY KEY, value TEXT)")
+        self.Interfaces = Interfaces(self.cursor)
+    
+    
+
+
+
+if __name__ == "__main__":
+    db = DB()
+    print(*(x for x in db.cursor.execute("SELECT name FROM sqlite_schema where type='table'").fetchall()))
