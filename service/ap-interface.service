@@ -1,0 +1,13 @@
+[Unit]
+Description=Add AP Interface
+Before=dnsmasq.service,hostapd.service
+After=network.target network-online.target
+Wants=network.target network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/iw phy0 interface add ap0 type __ap
+RemainAfterExit=No
+
+[Install]
+WantedBy=multi-user.target

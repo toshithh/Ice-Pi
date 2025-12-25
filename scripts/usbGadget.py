@@ -83,7 +83,13 @@ class USBGadget:
         disabled_modules = []
         if usb0:
             enabled_modules.append("g_ether")
+            if not os.path.exists("/etc/network/interfaces.d/usb0"):
+                os.system(f"sudo cp -r {os.path.join(BASE_DIR, "config/usb0")} /etc/network/interfaces.d && sudo systemctl restart networking")
+            if usb0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} forward usb0 wlan0")
         else:
+            os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} stop usb0 wlan0")
+            os.system("sudo ifconfig usb0 down")
             disabled_modules.append("g_ether")
         if storage:
             enabled_modules.append("g_mass_storage")
@@ -96,10 +102,17 @@ class USBGadget:
             disabled_modules.append("g_hid")
         self.update_cmdline_modules(add_modules=enabled_modules, remove_modules=disabled_modules)
         
-        if ap0 and not os.path.exists("/etc/network/interfaces.d/ap0"):
-            os.system(f"sudo cp -r {os.path.join(BASE_DIR, "/config/ap0")} /etc/network/interfaces.d && sudo systemctl restart networking")
-        if usb0 and not os.path.exists("/etc/network/interfaces.d/usb0"):
-            os.system(f"sudo cp -r {os.path.join(BASE_DIR, "config/usb0")} /etc/network/interfaces.d && sudo systemctl restart networking")
+        if ap0:
+            if not os.path.exists("/etc/network/interfaces.d/ap0"):
+                os.system(f"sudo cp -r {os.path.join(BASE_DIR, "config/ap0")} /etc/network/interfaces.d && sudo systemctl restart networking")
+            if not os.path.exists("/etc/systemd/system/ap-interface.service"):
+                os.system(f"sudo cp -r {os.path.join(BASE_DIR, "service/ap-interface.service")} /etc/systemd/system && sudo systemctl enable --now ap-interface.service && sudo systemctl restart networking")
+            if ap0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} forward ap0 wlan0")
+        else:
+            os.system("sudo ifconfig ap0 down")
+            os.system("sudo systemctl disable --now ap-interface.service")
+            os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} stop ap0 wlan0")
 
 
     def reboot():
