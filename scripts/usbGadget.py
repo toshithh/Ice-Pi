@@ -1,7 +1,7 @@
 import os
 import re
 from dbConn import DB
-
+from settings import BASE_DIR
 
 
 class USBGadget:
@@ -97,9 +97,9 @@ class USBGadget:
         self.update_cmdline_modules(add_modules=enabled_modules, remove_modules=disabled_modules)
         
         if ap0 and not os.path.exists("/etc/network/interfaces.d/ap0"):
-            os.system("sudo cp -r config/ap0 /etc/network/interfaces.d && sudo systemctl restart networking")
+            os.system(f"sudo cp -r {os.path.join(BASE_DIR, "/config/ap0")} /etc/network/interfaces.d && sudo systemctl restart networking")
         if usb0 and not os.path.exists("/etc/network/interfaces.d/usb0"):
-            os.system("sudo cp -r config/usb0 /etc/network/interfaces.d && sudo systemctl restart networking")
+            os.system(f"sudo cp -r {os.path.join(BASE_DIR, "config/usb0")} /etc/network/interfaces.d && sudo systemctl restart networking")
 
 
     def reboot():
