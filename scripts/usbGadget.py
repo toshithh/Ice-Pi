@@ -5,8 +5,8 @@ from dbConn import DB
 
 
 class USBGadget:
-    def __init__(self, DB: DB):
-        self.DB = DB
+    def __init__(self):
+        self.DB = DB()
         self.enableGadget()
 
     def enableGadget(self):
@@ -109,4 +109,4 @@ class USBGadget:
         os.system("sudo shutdown now")
 
 if __name__ == "__main__":
-    USBGadget(DB())
+    USBGadget()

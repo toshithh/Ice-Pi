@@ -27,12 +27,12 @@ class Interfaces:
             get_ip("usb0")
         )
         self.cursor.execute("""
-            INSERT INTO interfaces (name, enabled, CONFIG) VALUES
+            INSERT INTO interfaces (name, enabled, config) VALUES
                 ('wifi', 1, ?),
                 ('ap', 1, ?),
                 ('ethernet', 1, ?)
             ON CONFLICT(name) DO UPDATE SET
-                CONFIG = excluded.CONFIG;
+                config = excluded.config;
             """, 
                 ips
         )
@@ -57,8 +57,8 @@ class DB:
         self.CONN = sqlite3.connect("icepi.db")
         self.CONN.row_factory = sqlite3.Row
         self.cursor = self.CONN.cursor()
-        self.cursor.execute("Create TABLE IF NOT EXISTS interfaces(name TEXT VARCHAR(50), enabled INT, CONFIG VARCHAR(16) )")
-        self.cursor.execute("INSERT OR IGNORE INTO interfaces(name, enabled, CONFIG) values('storage', 0, '8gb'), ('hid', 1, '')")
+        self.cursor.execute("Create TABLE IF NOT EXISTS interfaces(name TEXT VARCHAR(50), enabled INT, config VARCHAR(16) )")
+        self.cursor.execute("INSERT OR IGNORE INTO interfaces(name, enabled, config) values('storage', 0, '8gb'), ('hid', 1, '')")
         self.cursor.execute("CREATE TABLE IF NOT EXISTS settings(key varchar(255) PRIMARY KEY, value TEXT)")
         self.Interfaces = Interfaces(self.cursor)
     

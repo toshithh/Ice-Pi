@@ -1,5 +1,11 @@
 #!/bin/bash
 
+set -euo pipefail
+if [[ $EUID -ne 0 ]]; then
+  echo "Must be run as root"
+  exit 1
+fi
+
 cd -- "$(dirname -- "${BASH_SOURCE[0]}"
 
 sudo apt update

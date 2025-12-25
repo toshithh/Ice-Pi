@@ -1,30 +1,9 @@
 import asyncio
 import json
-import ssl
 import websockets
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
-
-from dbConn import *
-from shell import Shell
-
-PORT_WS = 11280
-PORT_HTTP = 11279
-
-with open("SECRETS", "r") as f:
-    secrets = json.loads(f.read())
-
-PASSWORD = secrets["password"]
-
-
-ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-ssl_ctx.load_cert_chain(
-    certfile="certs/ice.pi.crt",
-    keyfile="certs/ice.pi.key"
-)
-
-ssl_ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-ssl_ctx.set_ciphers("ECDHE+AESGCM")
+from settings import *
 
 
 def reject(msg):
@@ -33,7 +12,6 @@ def reject(msg):
 def success(payload):
     payload["type"] = "success"
     return json.dumps(payload)
-
 
 
 async def handler(ws):
@@ -58,11 +36,12 @@ async def handler(ws):
                 await ws.send(success({"class": "pong"}))
             elif packet["type"] == "get":
                 if packet["class"] == "interfaces":
-                    wifi, ap, usb = update_interfaces()
                     await ws.send(success({
-                        "wifi": wifi,
-                        "ap": ap,
-                        "ethernet": usb
+                        "wifi": usbGadget["wifi"],
+                        "ap": usbGadget["ap"],
+                        "ethernet": usbGadget["ethernet"],
+                        "storage": usbGadget["storage"],
+                        "hid": usbGadget["hid"],
                     }))
             elif packet["type"] == "terminal":
                 await shell.write_pty(packet["cmd"])
