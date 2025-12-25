@@ -16,8 +16,9 @@ def get_ip(iface):
 
 
 class Interfaces:
-    def __init__(self, cursor: sqlite3.Cursor):
+    def __init__(self, CONN: sqlite3.Connection, cursor: sqlite3.Cursor):
         self.cursor = cursor
+        self.CONN = CONN
         self.update_interfaces()
 
     def update_interfaces(self):
@@ -36,6 +37,7 @@ class Interfaces:
             """, 
                 ips
         )
+        self.CONN.commit()
 
     def __getitem__(self, key: str) -> dict:
         return dict(self.cursor.execute("SELECT * FROM interfaces where name=?", (key,)).fetchone())
@@ -54,13 +56,17 @@ class Interfaces:
 
 class DB:
     def __init__(self):
-        self.CONN = sqlite3.connect("/var/local/IcePi/icepi.db")
+        self.CONN = sqlite3.connect("/var/local/IcePi/icepi.db", check_same_thread=False)
+        self.CONN.execute('PRAGMA journal_mode=WAL')
         self.CONN.row_factory = sqlite3.Row
         self.cursor = self.CONN.cursor()
         self.cursor.execute("Create TABLE IF NOT EXISTS interfaces(name VARCHAR(50) PRIMARY KEY, enabled INT, config VARCHAR(16) )")
+        self.CONN.commit()
         self.cursor.execute("INSERT OR IGNORE INTO interfaces(name, enabled, config) values('storage', 0, '8gb'), ('hid', 1, '')")
+        self.CONN.commit()
         self.cursor.execute("CREATE TABLE IF NOT EXISTS settings(key varchar(255) PRIMARY KEY, value TEXT)")
-        self.Interfaces = Interfaces(self.cursor)
+        self.CONN.commit()
+        self.Interfaces = Interfaces(self.CONN, self.cursor)
     
     
 

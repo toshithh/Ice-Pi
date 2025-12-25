@@ -1,6 +1,6 @@
 import os
 import re
-from ..dbConn import DB
+from dbConn import DB
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 

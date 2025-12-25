@@ -9,16 +9,27 @@ fi
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
 echo "[+] Updating"
-sudo apt update > /dev/null
+sudo apt-get update > /dev/null
 echo "[+] Resolving Dependencies"
-sudo apt install -y net-tools > /dev/null
-sudo apt install -y python3 > /dev/null
-sudo apt install -y python3-pip >/dev/null
-sudo apt install -y python3-venv >/dev/null
-sudo apt install -y hostapd >/dev/null
-sudo apt install -y dnsmasq >/dev/null
+sudo apt-get install -y net-tools > /dev/null
+sudo apt-get install -y python3 python3-pip python3-venv > /dev/null
+sudo apt-get install -y hostapd dnsmasq >/dev/null
 
 echo "[Done]"
+
+echo ""
+echo "[+] Writing files"
+sudo mkdir -p /var/local/IcePi
+sudo cp -r config/dnsmasq.conf /etc/dnsmasq.conf
+sudo cp -r config/hostapd.conf /etc/hostapd/hostapd.conf
+sudo cp -r config/NetworkManager.conf /etc/NetworkManager/NetworkManager.conf
+sudo cp -r service/* /etc/systemd/system
+echo '{"password": "T05h1th"}' > SECRETS
+sudo chmod +x scripts/ipForward.sh
+sudo cp -r ./* /var/local/IcePi
+echo "[Done]"
+
+cd /var/local/IcePi
 
 echo ""
 echo "[+] Setting up virtual environment"
@@ -27,29 +38,17 @@ source .venv/bin/activate
 pip3 install -r requirements.txt >/dev/null
 echo "...Done"
 
-echo ""
-echo "[+] Writing files"
-sudo mkdir -p /var/local/IcePi
-sudo cp -r certs /var/local/IcePi
-sudo cp -r config/dnsmasq.conf /etc/dnsmasq.conf
-sudo cp -r config/hostapd.conf /etc/hostapd/hostapd.conf
-echo '{"password": "T05h1th"}' > SECRETS
-chmod +x scripts/ipForward.sh
-echo "[Done]"
-
 echo "[+] Enabling Services"
 sudo systemctl unmask hostapd
 sudo systemctl enable --now dnsmasq
 sudo systemctl enable --now hostapd
+sudo systemctl enable --now ap-interface.service
+sudo systemctl enable --now ice-pi.service
 
-sudo cp -r config/NetworkManager.conf /etc/NetworkManager/NetworkManager.conf
-cd ..
 echo "[+] Setting up interfaces"
-sudo $(which python3) -m IcePi.scripts.usbGadget
-cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
-
 sudo systemctl restart NetworkManager || sudo systemctl restart networking || sudo systemctl restart dnsmasq || sudo systemctl restart hostapd
 echo "[Done]"
 
 echo ""
+echo "Ice-Pi set up!"
 echo "Please restart your device to load kernel modules!"

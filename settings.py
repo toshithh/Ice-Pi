@@ -6,15 +6,16 @@ from shell import Shell
 import json
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 PORT_WS = 11280
 PORT_HTTP = 11279
 
-with open("SECRETS", "r") as f:
+with open(os.path.join(BASE_DIR, "SECRETS"), "r") as f:
     secrets = json.loads(f.read())
 
 PASSWORD = secrets["password"]
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ssl_ctx.load_cert_chain(
