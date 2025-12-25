@@ -29,8 +29,8 @@ class Interfaces:
         self.cursor.execute("""
             INSERT INTO interfaces (name, enabled, config) VALUES
                 ('wifi', 1, ?),
-                ('ap', 1, ?),
-                ('ethernet', 1, ?)
+                ('ap', 2, ?),
+                ('ethernet', 2, ?)
             ON CONFLICT(name) DO UPDATE SET
                 config = excluded.config;
             """, 
@@ -38,7 +38,7 @@ class Interfaces:
         )
 
     def __getitem__(self, key: str) -> dict:
-        return dict(self.cursor.execute("SELECT * FROM interfaces where name=?", key).fetchone())
+        return dict(self.cursor.execute("SELECT * FROM interfaces where name=?", (key,)).fetchone())
 
 
     def __setitem__(self, interface: str, value: int) -> bool:
@@ -54,10 +54,10 @@ class Interfaces:
 
 class DB:
     def __init__(self):
-        self.CONN = sqlite3.connect("icepi.db")
+        self.CONN = sqlite3.connect("/var/local/IcePi/icepi.db")
         self.CONN.row_factory = sqlite3.Row
         self.cursor = self.CONN.cursor()
-        self.cursor.execute("Create TABLE IF NOT EXISTS interfaces(name TEXT VARCHAR(50), enabled INT, config VARCHAR(16) )")
+        self.cursor.execute("Create TABLE IF NOT EXISTS interfaces(name VARCHAR(50) PRIMARY KEY, enabled INT, config VARCHAR(16) )")
         self.cursor.execute("INSERT OR IGNORE INTO interfaces(name, enabled, config) values('storage', 0, '8gb'), ('hid', 1, '')")
         self.cursor.execute("CREATE TABLE IF NOT EXISTS settings(key varchar(255) PRIMARY KEY, value TEXT)")
         self.Interfaces = Interfaces(self.cursor)

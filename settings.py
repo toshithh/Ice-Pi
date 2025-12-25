@@ -18,8 +18,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ssl_ctx.load_cert_chain(
-    certfile="certs/ice.pi.crt",
-    keyfile="certs/ice.pi.key"
+    certfile="/var/local/IcePi/certs/ice.pi.crt",
+    keyfile="/var/local/IcePi/certs/ice.pi.key"
 )
 ssl_ctx.minimum_version = ssl.TLSVersion.TLSv1_2
 ssl_ctx.set_ciphers("ECDHE+AESGCM")

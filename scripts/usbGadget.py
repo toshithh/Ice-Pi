@@ -1,13 +1,16 @@
 import os
 import re
-from dbConn import DB
-from settings import BASE_DIR
+from ..dbConn import DB
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class USBGadget:
     def __init__(self):
+        print("[USB Gadget]")
         self.DB = DB()
         self.enableGadget()
+        self.__start()
+        
 
     def enableGadget(self):
         path = "/boot/firmware/config.txt"
@@ -63,6 +66,10 @@ class USBGadget:
             f.write(new_cmdline)
             f.truncate()
 
+    def __start(self):
+        print("[Start]")
+        interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in "ethernet wifi ap storage hid".split()}
+        self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"])
 
     def __setitem__(self, key: str, value: int):
         """
@@ -75,19 +82,23 @@ class USBGadget:
         interfaces[key] = value
         self.DB.Interfaces[key] = value
         self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"])
-        
 
+    def __getitem__(self, key):
+        return self.DB.Interfaces[key]
+        
 
     def __enable_interfaces(self, ap0, usb0, storage, hid):
         enabled_modules = ["dwc2"]
         disabled_modules = []
         if usb0:
             enabled_modules.append("g_ether")
+            print("[Enable] G_ETHER")
             if not os.path.exists("/etc/network/interfaces.d/usb0"):
                 os.system(f"sudo cp -r {os.path.join(BASE_DIR, "config", "usb0")} /etc/network/interfaces.d && sudo systemctl restart networking")
             if usb0 == 2:
                 os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} forward usb0 wlan0")
         else:
+            print("[Disable] G_ETHER")
             os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} stop usb0 wlan0")
             os.system("sudo ifconfig usb0 down")
             disabled_modules.append("g_ether")
@@ -100,9 +111,8 @@ class USBGadget:
 
         else: 
             disabled_modules.append("g_hid")
-        self.update_cmdline_modules(add_modules=enabled_modules, remove_modules=disabled_modules)
-        
         if ap0:
+            print("[Enable] AP")
             if not os.path.exists("/etc/network/interfaces.d/ap0"):
                 os.system(f"sudo cp -r {os.path.join(BASE_DIR, "config", "ap0")} /etc/network/interfaces.d && sudo systemctl restart networking")
             if not os.path.exists("/etc/systemd/system/ap-interface.service"):
@@ -110,9 +120,12 @@ class USBGadget:
             if ap0 == 2:
                 os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} forward ap0 wlan0")
         else:
+            print("[Disable] AP")
             os.system("sudo ifconfig ap0 down")
             os.system("sudo systemctl disable --now ap-interface.service")
             os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} stop ap0 wlan0")
+
+        self.update_cmdline_modules(add_modules=enabled_modules, remove_modules=disabled_modules, path="/boot/firmware/cmdline.txt")
 
 
     def reboot():
