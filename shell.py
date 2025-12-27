@@ -4,10 +4,9 @@ import json
 import asyncio
 
 class Shell:
-    def __init__(self, ws, key):
+    def __init__(self, ws):
         self.ws = ws
         self.pid, self.fd = pty.fork()
-        self.key = key
 
         if self.pid == 0:
             os.execvp("/bin/bash", ["bash"])

@@ -17,20 +17,20 @@ async def handler(ws: websockets.ServerConnection):
             await ws.close()
             return
         if auth.get("password") != PASSWORD:
-            await ws.send(reject("Wrong password"))
+            await ws.send(reject("Wrong password!", hard=True))
             await ws.close()
             return
         await ws.send(success({"msg": "Authenticated"}))
         print("Authenticated")
-        shell = Shell(ws)
+        #shell = Shell(ws)
         async for message in ws:
             packet = json.loads(message)
             if packet["type"] == "ping":
                 await ws.send(success({"class": "pong"}))
             elif packet["type"] == "terminal":
-                await shell.write_pty(packet["cmd"])
+                pass #await shell.write_pty(packet["cmd"])
             else:
-                Response(ws, packet)
+                await Response(ws, packet)
     except Exception as e:
         print("WS closed:", e)
 
@@ -41,7 +41,9 @@ async def start_ws():
         "0.0.0.0",
         PORT_WS,
         ssl=ssl_ctx,
-        max_size=2**20
+        max_size=2**20,
+        ping_interval=None,
+        ping_timeout=None
     ):
         print(f"WSS running on wss://0.0.0.0:{PORT_WS}")
         await asyncio.Future()

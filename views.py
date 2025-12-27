@@ -3,7 +3,9 @@ from settings import *
 import websockets
 
 ######## Helpers ########
-def reject(msg):
+def reject(msg, hard=False):
+    if hard:
+        return json.dumps({"type": "authError", "msg": msg})    
     return json.dumps({"type": "error", "msg": msg})
 
 def success(payload):
@@ -14,11 +16,17 @@ def success(payload):
 ######### Main Functions #########
 
 def Response(ws: websockets.ServerConnection, packet):
+    async def empty():
+        return
     routes = {
         "interfaces": interface_info,
         "base_info": base_info,
     }
-    return (routes[packet["class"]](ws, packet))
+    try:
+        return (routes[packet["class"]](ws, packet))
+    except Exception as err:
+        print(err)
+        return empty()
 
 
 
@@ -32,6 +40,7 @@ async def base_info():
 
 
 async def interface_info(ws: websockets.ServerConnection, packet):
+    print("Interfaces called")
     await ws.send(
         success({
             "wifi": usbGadget["wifi"],
@@ -39,6 +48,6 @@ async def interface_info(ws: websockets.ServerConnection, packet):
             "ethernet": usbGadget["ethernet"],
             "storage": usbGadget["storage"],
             "hid": usbGadget["hid"],
-            "msg_stamp": packet["msg_stamp"]
+            "stamp": packet["stamp"]
         })
     )
