@@ -3,18 +3,11 @@ import json
 import websockets
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from settings import *
+from views import *
 
 
-def reject(msg):
-    return json.dumps({"type": "error", "msg": msg})
 
-def success(payload):
-    payload["type"] = "success"
-    return json.dumps(payload)
-
-
-async def handler(ws):
+async def handler(ws: websockets.ServerConnection):
     print("Client connected")
     await ws.send(json.dumps({"type": "connected"}))
     try:
@@ -34,17 +27,10 @@ async def handler(ws):
             packet = json.loads(message)
             if packet["type"] == "ping":
                 await ws.send(success({"class": "pong"}))
-            elif packet["type"] == "get":
-                if packet["class"] == "interfaces":
-                    await ws.send(success({
-                        "wifi": usbGadget["wifi"],
-                        "ap": usbGadget["ap"],
-                        "ethernet": usbGadget["ethernet"],
-                        "storage": usbGadget["storage"],
-                        "hid": usbGadget["hid"],
-                    }))
             elif packet["type"] == "terminal":
                 await shell.write_pty(packet["cmd"])
+            else:
+                Response(ws, packet)
     except Exception as e:
         print("WS closed:", e)
 

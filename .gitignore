@@ -1,3 +1,4 @@
 certs/
 icepi.db
-./SECRETS
+SECRETS
+.venv
