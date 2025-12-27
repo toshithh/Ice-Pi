@@ -36,32 +36,67 @@ class USBGadget:
 
 
     def update_cmdline_modules(self, add_modules=None, remove_modules=None, path="scripts/test.conf"):
-        add_modules = set(add_modules or [])
+        add_modules = list(add_modules or [])
         remove_modules = set(remove_modules or [])
+
+        BASE_MODULES = ["dwc2", "libcomposite"]
+
         with open(path, "r+") as f:
             parts = f.read().strip().split(" ")
-            modules = set()
+
+            existing_modules = []
             new_parts = []
+
+            # Extract existing modules-load
             for part in parts:
                 if part.startswith("modules-load="):
-                    modules = set(part.split("=", 1)[1].split(","))
+                    existing_modules = part.split("=", 1)[1].split(",")
                 else:
                     new_parts.append(part)
-            modules |= add_modules
-            modules -= remove_modules
+
+            # Remove explicitly removed modules
+            modules = [m for m in existing_modules if m not in remove_modules]
+
+            # Add requested modules (preserve order)
+            for m in add_modules:
+                if m not in modules:
+                    modules.append(m)
+
+            # Detect whether any libcomposite function is enabled
+            has_functions = any(m.startswith("usb_f_") for m in modules)
+
+            final_modules = []
+
+            # Enforce required base modules only if functions exist
+            if has_functions:
+                for m in BASE_MODULES:
+                    if m not in modules:
+                        final_modules.append(m)
+
+            # Append remaining modules in preserved order
+            for m in modules:
+                if m not in final_modules:
+                    final_modules.append(m)
+
             modules_part = None
-            if modules:
-                modules_part = "modules-load=" + ",".join(sorted(modules))
+            if final_modules:
+                modules_part = "modules-load=" + ",".join(final_modules)
+
+            # Rebuild cmdline
             final_parts = []
             inserted = False
+
             for part in new_parts:
                 final_parts.append(part)
                 if part == "rootwait" and modules_part and not inserted:
                     final_parts.append(modules_part)
                     inserted = True
+
             if modules_part and not inserted:
                 final_parts.append(modules_part)
+
             new_cmdline = " ".join(final_parts)
+
             f.seek(0)
             f.write(new_cmdline)
             f.truncate()
@@ -91,26 +126,28 @@ class USBGadget:
         enabled_modules = ["dwc2"]
         disabled_modules = []
         if usb0:
-            enabled_modules.append("g_ether")
-            print("[Enable] G_ETHER")
+            enabled_modules.append("usb_f_ecm")
+            enabled_modules.append("usb_f_rndis")
+            print("[Enable] usb_ethernet")
             if not os.path.exists("/etc/network/interfaces.d/usb0"):
                 os.system(f"sudo cp -r {os.path.join(BASE_DIR, "config", "usb0")} /etc/network/interfaces.d && sudo systemctl restart networking")
             if usb0 == 2:
                 os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} forward usb0 wlan0")
         else:
-            print("[Disable] G_ETHER")
+            print("[Disable] usb_ethernet")
             os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} stop usb0 wlan0")
             os.system("sudo ifconfig usb0 down")
-            disabled_modules.append("g_ether")
+            disabled_modules.append("usb_f_ecm")
+            disabled_modules.append("usb_f_rndis")
         if storage:
-            enabled_modules.append("g_mass_storage")
+            enabled_modules.append("usb_f_mass_storage")
         else:
-            disabled_modules.append("g_mass_storage")
+            disabled_modules.append("usb_f_mass_storage")
         if hid:
-            enabled_modules.append("g_hid")
+            enabled_modules.append("usb_f_hid")
 
         else: 
-            disabled_modules.append("g_hid")
+            disabled_modules.append("usb_f_hid")
         if ap0:
             print("[Enable] AP")
             if not os.path.exists("/etc/network/interfaces.d/ap0"):

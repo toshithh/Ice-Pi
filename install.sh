@@ -23,6 +23,8 @@ sudo mkdir -p /var/local/IcePi
 sudo cp -r config/dnsmasq.conf /etc/dnsmasq.conf
 sudo cp -r config/hostapd.conf /etc/hostapd/hostapd.conf
 sudo cp -r config/NetworkManager.conf /etc/NetworkManager/NetworkManager.conf
+sudo cp -r config/usb-gadget-init.sh /usr/local/sbin/usb-gadget-init.sh
+sudo chmod +x /usr/local/sbin/usb-gadget-init.sh
 sudo cp -r service/* /etc/systemd/system
 echo '{"password": "T05h1th"}' > SECRETS
 sudo chmod +x scripts/ipForward.sh
@@ -42,6 +44,7 @@ echo "[+] Enabling Services"
 sudo systemctl unmask hostapd
 sudo systemctl enable --now dnsmasq
 sudo systemctl enable --now hostapd
+sudo systemctl enable --now usb-gadget.service
 sudo systemctl enable --now ap-interface.service
 sudo systemctl enable --now ice-pi.service
 

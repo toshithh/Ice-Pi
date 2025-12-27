@@ -1,0 +1,14 @@
+[Unit]
+Description=USB Gadget (libcomposite) Initializer
+DefaultDependencies=no
+After=systemd-modules-load.service
+Before=sysinit.target
+Requires=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/usb-gadget-init.sh
+RemainAfterExit=No
+
+[Install]
+WantedBy=sysinit.target
