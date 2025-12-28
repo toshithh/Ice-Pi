@@ -91,8 +91,8 @@ class USBGadget:
 
     def __start(self):
         print("[Start]")
-        interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in "ethernet wifi ap storage hid".split()}
-        self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"])
+        interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in "ethernet wifi ap storage hid tor".split()}
+        self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"], interfaces["tor"])
 
     def __setitem__(self, key: str, value: int):
         """
@@ -104,13 +104,14 @@ class USBGadget:
         interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in "ethernet wifi ap storage hid".split()}
         self.DB.Interfaces[key] = value
         interfaces[key] = value
-        self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"])
+        self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"], interfaces["tor"])
 
     def __getitem__(self, key):
         return self.DB.Interfaces[key]
         
+    
 
-    def __enable_interfaces(self, ap0, usb0, storage, hid):
+    def __enable_interfaces(self, ap0, usb0, storage, hid, tor):
         """
         Enable/disable USB functions by loading/unloading kernel modules
         """
@@ -182,7 +183,6 @@ class USBGadget:
                 os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'service', 'ap-interface.service')} /etc/systemd/system")
                 os.system("sudo systemctl enable --now ap-interface.service")
                 os.system("sudo systemctl restart networking")
-            
             if ap0 == 2:
                 os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward ap0 wlan0")
         else:
@@ -190,6 +190,26 @@ class USBGadget:
             os.system("sudo ifconfig ap0 down")
             os.system("sudo systemctl disable --now ap-interface.service")
             os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop ap0 wlan0")
+
+        # ========== Tor ==========
+        if tor:
+            if ap0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop ap0 wlan0")
+            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} forward ap0 wlan0")
+            if usb0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop usb0 wlan0")
+            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} forward usb0 wlan0")
+            replace_dnsmasq_servers(["127.0.0.1#5353"])
+            os.system("sudo systemctl restart hostapd")
+        else:
+            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} stop ap0 wlan0")
+            if ap0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward ap0 wlan0")
+            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} stop usb0 wlan0")
+            if usb0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward usb0 wlan0")
+            replace_dnsmasq_servers(("94.140.14.14", "94.140.15.15"))
+            os.system("sudo systemctl restart hostapd")
         
         # Wait for module changes to settle
         time.sleep(0.5)
@@ -243,6 +263,25 @@ class USBGadget:
 
     def shutdown(self):
         os.system("sudo shutdown now")
+
+
+def replace_dnsmasq_servers(servers, conf_path="/etc/dnsmasq.conf"):
+    """
+    Replace all 'server=' lines in a dnsmasq config file
+    with the supplied list of server IPs.
+    """
+    with open(conf_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    new_lines = []
+    for line in lines:
+        if not line.lstrip().startswith("server="):
+            new_lines.append(line)
+
+    for srv in servers:
+        new_lines.append(f"server={srv}\n")
+
+    with open(conf_path, "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
 
 if __name__ == "__main__":
     USBGadget()

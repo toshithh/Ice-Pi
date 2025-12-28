@@ -65,12 +65,11 @@ class DB:
         self.cursor = self.CONN.cursor()
         self.cursor.execute("Create TABLE IF NOT EXISTS interfaces(name VARCHAR(50) PRIMARY KEY, enabled INT, config VARCHAR(16) )")
         self.CONN.commit()
-        self.cursor.execute("INSERT OR IGNORE INTO interfaces(name, enabled, config) values('storage', 0, '8gb'), ('hid', 1, '')")
+        self.cursor.execute("INSERT OR IGNORE INTO interfaces(name, enabled, config) values('storage', 0, '8gb'), ('hid', 1, ''), ('tor', 0, '')")
         self.CONN.commit()
         self.cursor.execute("CREATE TABLE IF NOT EXISTS settings(key varchar(255) PRIMARY KEY, value TEXT)")
         self.CONN.commit()
         self.Interfaces = Interfaces(self.CONN, self.cursor)
-    
     
 
 

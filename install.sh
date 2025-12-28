@@ -57,16 +57,24 @@ echo "[Done]"
 
 echo "[+] Enabling Services"
 sudo systemctl unmask hostapd
-sudo systemctl enable --now ap-interface.service
-sudo systemctl enable --now ice-pi.service
-sudo systemctl enable --now dnsmasq
-sudo systemctl enable --now hostapd
-sudo systemctl enable --now usb-gadget.service
+sudo systemctl enable --now ap-interface.service >/dev/null
+echo "[+] ap-interface"
+sudo systemctl enable --now ice-pi.service >/dev/null
+echo "[+] ice-pi"
+sudo systemctl enable --now dnsmasq >/dev/null
+echo "[+] dnsmasq"
+sudo systemctl enable --now hostapd >/dev/null
+echo "[+] hostapd"
+sudo systemctl enable --now tor >/dev/null
+echo "[+] tor"
+sudo systemctl enable --now usb-gadget.service >/dev/null
+echo "[+] usb-gadget"
+echo "[Done]"
 
 echo ""
 
 echo "[+] Restarting services"
-sudo systemctl restart NetworkManager || sudo systemctl restart networking || sudo systemctl restart dnsmasq || sudo systemctl restart hostapd
+sudo systemctl restart NetworkManager || sudo systemctl restart networking || sudo systemctl restart dnsmasq || sudo systemctl restart hostapd || sudo systemctl restart tor
 echo "[Done]"
 
 echo ""

@@ -63,6 +63,7 @@ async def interface_info(ws: websockets.ServerConnection, packet):
             "ethernet": usbGadget["ethernet"],
             "storage": usbGadget["storage"],
             "hid": usbGadget["hid"],
+            "tor": usbGadget["tor"],
             "stamp": packet["stamp"]
         })
     )
