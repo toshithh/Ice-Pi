@@ -1,26 +1,30 @@
 # 🧊 Ice Pi  
 **A mobile GNU/Linux network offense & defense platform**
 
-<center><img src="assets/rpi.png" width="350"></center>
+<center>
+  <img src="assets/rpi.png">
+</center>
 
 Ice Pi is a **GNU GPL–licensed**, mobile-controlled **Kali Linux–powered network security device**.  
 It is designed for people who **break networks to understand them** — and for those who want to **carry a trusted network with them everywhere**.
 
-Ice Pi turns a single portable device into:
-- A full red-team / penetration-testing platform  
-- A hardened personal network gateway for hostile environments  
+Ice Pi turns a **Raspberry Pi Zero** into:
+- **A full red-team / penetration-testing platform**
+- **A hardened personal network gateway for hostile environments**
 
 No cloud. No lock-in. No black boxes.
+
+\* The image is an AI Generated Illustration
 
 ---
 
 ## ⚠️ Legal & Ethical Use
 
 Ice Pi is intended for:
-- Authorized penetration testing
-- Security research and education
 - Network hardening and privacy protection
 - Personal device security on untrusted networks
+- Authorized penetration testing
+- Security research and education
 
 You are responsible for how you use it.  
 Do not target networks or devices without explicit permission.
@@ -135,6 +139,8 @@ The app is used to:
 Ice Pi is designed to be fully usable without a laptop.
 
 All primary interactions happen through the mobile app.
+
+The app is currently in Beta testing. Early users/testers can reach out to me to get added to Goolgle Play Testers through [Discord](https://discord.com/invite/jzrhqnWUEV) or wait for a week 😉.
 
 
 ---
