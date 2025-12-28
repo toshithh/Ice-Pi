@@ -1,6 +1,7 @@
 import json
 from settings import *
 import websockets
+from scripts.keyboard import KeyboardExecutor
 
 ######## Helpers ########
 def reject(msg, hard=False):
@@ -27,6 +28,17 @@ def Response(ws: websockets.ServerConnection, packet):
     except Exception as err:
         print(err)
         return empty()
+    
+
+keyboard = KeyboardExecutor()
+
+def HIDExecutor(ws: websockets.ServerConnection, packet):
+    try:
+        if(packet["type"] == "key"):
+            keyboard.press_combo(packet["data"])
+    except Exception as err:
+        print("HIDExecutor:", err)
+
 
 
 

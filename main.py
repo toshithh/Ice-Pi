@@ -29,8 +29,10 @@ async def handler(ws: websockets.ServerConnection):
                 await ws.send(success({"class": "pong"}))
             elif packet["type"] == "terminal":
                 pass #await shell.write_pty(packet["cmd"])
-            else:
+            elif packet["type"] == "request":
                 await Response(ws, packet)
+            else:
+                HIDExecutor(ws, packet)
     except Exception as e:
         print("WS closed:", e)
 

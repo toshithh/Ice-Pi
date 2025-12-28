@@ -46,34 +46,21 @@ class USBGadget:
 
             existing_modules = []
             new_parts = []
-
-            # Extract existing modules-load
             for part in parts:
                 if part.startswith("modules-load="):
                     existing_modules = part.split("=", 1)[1].split(",")
                 else:
                     new_parts.append(part)
-
-            # Remove explicitly removed modules
             modules = [m for m in existing_modules if m not in remove_modules]
-
-            # Add requested modules (preserve order)
             for m in add_modules:
                 if m not in modules:
                     modules.append(m)
-
-            # Detect whether any libcomposite function is enabled
             has_functions = any(m.startswith("usb_f_") for m in modules)
-
             final_modules = []
-
-            # Enforce required base modules only if functions exist
             if has_functions:
                 for m in BASE_MODULES:
                     if m not in modules:
                         final_modules.append(m)
-
-            # Append remaining modules in preserved order
             for m in modules:
                 if m not in final_modules:
                     final_modules.append(m)
@@ -82,7 +69,6 @@ class USBGadget:
             if final_modules:
                 modules_part = "modules-load=" + ",".join(final_modules)
 
-            # Rebuild cmdline
             final_parts = []
             inserted = False
 
