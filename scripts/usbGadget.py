@@ -194,7 +194,7 @@ class USBGadget:
         # Wait for module changes to settle
         time.sleep(0.5)
         
-        # Restart USB gadget service to rebuild gadget with new modules
+        # Restart USB gadget service to apply modules
         result = subprocess.run(
             ["systemctl", "restart", "usb-gadget.service"],
             capture_output=True,
