@@ -118,7 +118,7 @@ The installer:
 - Initializes networking, routing, and isolation
 - Prepares Ice Pi for mobile control
 
-The default credentials are:
+The **default credentials** are:
 - Connection password: `T05h1th`
 - SSID: `IcePi`
 - WPA-Passphrase: `T05h1thS1c3`
