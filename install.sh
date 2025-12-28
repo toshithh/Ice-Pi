@@ -14,10 +14,11 @@ echo "[+] Resolving Dependencies"
 sudo apt-get install -y net-tools openvpn > /dev/null
 sudo apt-get install -y python3 python3-pip python3-venv > /dev/null
 sudo apt-get install -y hostapd dnsmasq >/dev/null
-
+sudo apt-get -y install tor >/dev/null
 echo "[Done]"
 
 echo ""
+
 echo "[+] Writing files"
 sudo mkdir -p /var/local/IcePi
 sudo cp -r config/dnsmasq.conf /etc/dnsmasq.conf
@@ -28,6 +29,7 @@ sudo chmod +x /usr/local/sbin/usb-gadget-init.sh
 sudo cp -r service/* /etc/systemd/system
 echo '{"password": "T05h1th"}' > SECRETS
 sudo chmod +x scripts/ipForward.sh
+sudo chmod +x scripts/tor.sh
 sudo cp -r ./* /var/local/IcePi
 echo "[Done]"
 
@@ -40,6 +42,19 @@ source .venv/bin/activate
 pip3 install -r requirements.txt >/dev/null
 echo "...Done"
 
+echo ""
+
+echo "[+] Configuring Tor"
+TORRC="/etc/tor/torrc"
+add_if_missing() {
+    grep -q "^$1" "$TORRC" || echo "$1" | sudo tee -a "$TORRC" > /dev/null
+}
+add_if_missing "VirtualAddrNetworkIPv4 10.192.0.0/10"
+add_if_missing "AutomapHostsOnResolve 1"
+add_if_missing "TransPort 0.0.0.0:9040"
+add_if_missing "DNSPort 0.0.0.0:5353"
+echo "[Done]"
+
 echo "[+] Enabling Services"
 sudo systemctl unmask hostapd
 sudo systemctl enable --now ap-interface.service
@@ -48,7 +63,9 @@ sudo systemctl enable --now dnsmasq
 sudo systemctl enable --now hostapd
 sudo systemctl enable --now usb-gadget.service
 
-echo "[+] Setting up interfaces"
+echo ""
+
+echo "[+] Restarting services"
 sudo systemctl restart NetworkManager || sudo systemctl restart networking || sudo systemctl restart dnsmasq || sudo systemctl restart hostapd
 echo "[Done]"
 
