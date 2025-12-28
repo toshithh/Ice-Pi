@@ -98,7 +98,7 @@ Everything is local. Everything is auditable.
 | VPN Gateway | ✅ | ❌ | ❌ |
 | Tor Routing | ✅ | ❌ | ❌ |
 | Safe Public Wi-Fi Gateway | ✅ | ❌ | ❌ |
-| Vendor Lock-in | ❌ | ✅ | ❌ |
+| No Vendor Lock-in | ✅ | ❌ | ✅ |
 
 \* Where legally permitted.
 
