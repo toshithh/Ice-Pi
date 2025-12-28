@@ -42,11 +42,11 @@ echo "...Done"
 
 echo "[+] Enabling Services"
 sudo systemctl unmask hostapd
+sudo systemctl enable --now ap-interface.service
+sudo systemctl enable --now ice-pi.service
 sudo systemctl enable --now dnsmasq
 sudo systemctl enable --now hostapd
 sudo systemctl enable --now usb-gadget.service
-sudo systemctl enable --now ap-interface.service
-sudo systemctl enable --now ice-pi.service
 
 echo "[+] Setting up interfaces"
 sudo systemctl restart NetworkManager || sudo systemctl restart networking || sudo systemctl restart dnsmasq || sudo systemctl restart hostapd

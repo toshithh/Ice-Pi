@@ -20,8 +20,11 @@ def Response(ws: websockets.ServerConnection, packet):
     async def empty():
         return
     routes = {
-        "interfaces": interface_info,
+        "interface_info": interface_info,
         "base_info": base_info,
+        "enable_interface": enable_interface,
+        "disable_interface": disable_interface,
+        "power_off": power_off
     }
     try:
         return (routes[packet["class"]](ws, packet))
@@ -63,3 +66,45 @@ async def interface_info(ws: websockets.ServerConnection, packet):
             "stamp": packet["stamp"]
         })
     )
+
+async def enable_interface(ws: websockets.ServerConnection, packet):
+    print("Enable Interface")
+    print(packet)
+    print()
+    try:
+        usbGadget[packet["name"]] = 2 if (packet["bridge"]) else 1
+        await ws.send(success({
+            "stamp": packet["stamp"]
+        }))
+    except Exception as err:
+        print(err)
+        await ws.send(reject({"stamp": packet["stamp"], "dtl": str(err)}))
+
+
+async def disable_interface(ws: websockets.ServerConnection, packet):
+    print("Disable Interface")
+    print(packet)
+    print()
+    try:
+        usbGadget[packet["name"]] = 0
+        await ws.send(success({
+            "stamp": packet["stamp"]
+        }))
+    except Exception as err:
+        print(err)
+        await ws.send(reject({"stamp": packet["stamp"], "dtl": str(err)}))
+
+
+async def power_off(ws: websockets.ServerConnection, packet):
+    if(packet["mode"] == "reboot"):
+        await ws.send(success({
+            "stamp": packet["stamp"],
+            "dtl": "Rebooting!"
+        }))
+        usbGadget.reboot()
+    elif (packet["mode"] == "shutdown"):
+        await ws.send(success({
+            "stamp": packet["stamp"],
+            "dtl": "Rebooting!"
+        }))
+        usbGadget.shutdown()

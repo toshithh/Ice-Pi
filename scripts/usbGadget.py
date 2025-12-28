@@ -1,7 +1,9 @@
 import os
 import re
 from dbConn import DB
+import subprocess, time
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 
 class USBGadget:
@@ -94,14 +96,14 @@ class USBGadget:
 
     def __setitem__(self, key: str, value: int):
         """
-        ethernet, wifi, ap, storage, hid
+        Options: ethernet, wifi, ap, storage, hid
         0 -> Disable
         1 -> Enable
-        2 -> Bridge
+        2 -> Bridge (wifi, ap)
         """
         interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in "ethernet wifi ap storage hid".split()}
-        interfaces[key] = value
         self.DB.Interfaces[key] = value
+        interfaces[key] = value
         self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"])
 
     def __getitem__(self, key):
@@ -109,52 +111,137 @@ class USBGadget:
         
 
     def __enable_interfaces(self, ap0, usb0, storage, hid):
-        enabled_modules = ["dwc2"]
-        disabled_modules = []
+        """
+        Enable/disable USB functions by loading/unloading kernel modules
+        """
+        G = "/sys/kernel/config/usb_gadget/g1"
+        
+        # Unbind gadget before making module changes
+        try:
+            with open(f"{G}/UDC", "w") as f:
+                f.write("")
+            print("[Unbound] USB gadget")
+            time.sleep(0.3)
+        except:
+            pass
+        
+        # ========== USB ETHERNET (ECM + RNDIS) ==========
         if usb0:
-            enabled_modules.append("usb_f_ecm")
-            enabled_modules.append("usb_f_rndis")
             print("[Enable] usb_ethernet")
+            
+            # Load modules
+            subprocess.run(["modprobe", "usb_f_ecm"], check=False, capture_output=True)
+            subprocess.run(["modprobe", "usb_f_rndis"], check=False, capture_output=True)
+            
+            # Configure network interface
             if not os.path.exists("/etc/network/interfaces.d/usb0"):
-                os.system(f"sudo cp -r {os.path.join(BASE_DIR, "config", "usb0")} /etc/network/interfaces.d && sudo systemctl restart networking")
+                os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'config', 'usb0')} /etc/network/interfaces.d")
+                os.system("sudo systemctl restart networking")
+            
+            # Enable IP forwarding if bridge mode
             if usb0 == 2:
-                os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} forward usb0 wlan0")
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward usb0 wlan0")
         else:
             print("[Disable] usb_ethernet")
-            os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} stop usb0 wlan0")
+            
+            # Stop forwarding and bring down interface
+            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop usb0 wlan0")
             os.system("sudo ifconfig usb0 down")
-            disabled_modules.append("usb_f_ecm")
-            disabled_modules.append("usb_f_rndis")
+            
+            # Unload modules
+            subprocess.run(["modprobe", "-r", "usb_f_ecm"], check=False, capture_output=True)
+            subprocess.run(["modprobe", "-r", "usb_f_rndis"], check=False, capture_output=True)
+        
+        # ========== USB MASS STORAGE ==========
         if storage:
-            enabled_modules.append("usb_f_mass_storage")
+            print("[Enable] mass_storage")
+            subprocess.run(["modprobe", "usb_f_mass_storage"], check=False, capture_output=True)
         else:
-            disabled_modules.append("usb_f_mass_storage")
+            print("[Disable] mass_storage")
+            subprocess.run(["modprobe", "-r", "usb_f_mass_storage"], check=False, capture_output=True)
+        
+        # ========== USB HID KEYBOARD ==========
         if hid:
-            enabled_modules.append("usb_f_hid")
-
-        else: 
-            disabled_modules.append("usb_f_hid")
+            print("[Enable] hid")
+            subprocess.run(["modprobe", "usb_f_hid"], check=False, capture_output=True)
+            time.sleep(0.3)
+            os.system("sudo chmod 666 /dev/hidg0 2>/dev/null")
+        else:
+            print("[Disable] hid")
+            subprocess.run(["modprobe", "-r", "usb_f_hid"], check=False, capture_output=True)
+        
+        # ========== ACCESS POINT (AP0) ==========
         if ap0:
             print("[Enable] AP")
+            
             if not os.path.exists("/etc/network/interfaces.d/ap0"):
-                os.system(f"sudo cp -r {os.path.join(BASE_DIR, "config", "ap0")} /etc/network/interfaces.d && sudo systemctl restart networking")
+                os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'config', 'ap0')} /etc/network/interfaces.d")
+                os.system("sudo systemctl restart networking")
+            
             if not os.path.exists("/etc/systemd/system/ap-interface.service"):
-                os.system(f"sudo cp -r {os.path.join(BASE_DIR, "service", "ap-interface.service")} /etc/systemd/system && sudo systemctl enable --now ap-interface.service && sudo systemctl restart networking")
+                os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'service', 'ap-interface.service')} /etc/systemd/system")
+                os.system("sudo systemctl enable --now ap-interface.service")
+                os.system("sudo systemctl restart networking")
+            
             if ap0 == 2:
-                os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} forward ap0 wlan0")
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward ap0 wlan0")
         else:
             print("[Disable] AP")
             os.system("sudo ifconfig ap0 down")
             os.system("sudo systemctl disable --now ap-interface.service")
-            os.system(f"sudo {os.path.join(BASE_DIR, "scripts", "ipForward.sh")} stop ap0 wlan0")
+            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop ap0 wlan0")
+        
+        # Wait for module changes to settle
+        time.sleep(0.5)
+        
+        # Restart USB gadget service to rebuild gadget with new modules
+        result = subprocess.run(
+            ["systemctl", "restart", "usb-gadget.service"],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode == 0:
+            print("[Restarted] USB gadget service")
+        else:
+            print(f"[Error] Failed to restart gadget: {result.stderr}")
 
-        self.update_cmdline_modules(add_modules=enabled_modules, remove_modules=disabled_modules, path="/boot/firmware/cmdline.txt")
+
+            
+    def _ensure_modules_in_cmdline(self):
+        """
+        Ensure all USB function modules are loaded at boot
+        This only needs to run once during setup
+        """
+        required_modules = [
+            "dwc2",
+            "libcomposite", 
+        ]
+        
+        path = "/boot/firmware/cmdline.txt"
+        
+        with open(path, "r") as f:
+            cmdline = f.read().strip()
+        if "modules-load=" in cmdline:
+            parts = cmdline.split()
+            for part in parts:
+                if part.startswith("modules-load="):
+                    current_modules = part.split("=", 1)[1].split(",")
+                    missing = [m for m in required_modules if m not in current_modules]
+                    
+                    if missing:
+                        self.update_cmdline_modules(add_modules=missing, path=path)
+                        print(f"[Added to cmdline.txt] {', '.join(missing)}")
+                    break
+        else:
+            self.update_cmdline_modules(add_modules=required_modules, path=path)
+            print(f"[Added to cmdline.txt] All USB modules")
 
 
-    def reboot():
+    def reboot(self):
         os.system("sudo reboot now")
 
-    def shutdown():
+    def shutdown(self):
         os.system("sudo shutdown now")
 
 if __name__ == "__main__":

@@ -45,7 +45,10 @@ class Interfaces:
 
     def __setitem__(self, interface: str, value: int) -> bool:
         try:
+            print("DB Interfaces Start")
             self.cursor.execute("UPDATE interfaces set enabled=? where name = ?", (value, interface))
+            self.CONN.commit()
+            print("DB Interfaces Set")
             return True
         except Exception as err:
             print(err)
