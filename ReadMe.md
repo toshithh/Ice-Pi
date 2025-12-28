@@ -1,6 +1,8 @@
 # 🧊 Ice Pi  
 **A mobile GNU/Linux network offense & defense platform**
 
+<center><img src="assets/rpi.png" width="350"></center>
+
 Ice Pi is a **GNU GPL–licensed**, mobile-controlled **Kali Linux–powered network security device**.  
 It is designed for people who **break networks to understand them** — and for those who want to **carry a trusted network with them everywhere**.
 
@@ -78,7 +80,7 @@ Everything is local. Everything is auditable.
 
 ## 🆚 Comparison
 
-| Feature | **Ice Pi** | :contentReference[oaicite:0]{index=0} Devices | :contentReference[oaicite:1]{index=1} |
+| Feature | **Ice Pi** | Hak5 Devices | P4wnP1 |
 |------|-------|--------|--------|
 | GNU GPL Licensed | ✅ | ❌ | ❌ |
 | Fully Open | ✅ | ❌ | ✅ |
@@ -96,6 +98,45 @@ Everything is local. Everything is auditable.
 
 \* Where legally permitted.
 
+----- 
+
+## ⚙️ Installation
+On a fresh install of Kali Linux on Raspberry Pi, execute:
+```
+git clone https://github.com/toshithh/Ice-Pi.git
+cd Ice-Pi
+sudo chmod +x install.sh
+sudo ./install.sh
+```
+The installer:
+- Sets up the Kali Linux environment
+- Configures USB gadget modes (HID, storage, USB Ethernet)
+- Initializes networking, routing, and isolation
+- Prepares Ice Pi for mobile control
+
+\* A reboot may be required after installation.
+
+---
+
+## 📱 AnyKBoard - Mobile App
+Ice Pi is controlled using the AnyKBoard mobile application.
+
+<center><img src="assets/akb.png" width="200"></center>
+
+The app is used to:
+- Securely connect to Ice Pi
+- Execute HID and payload actions
+- Manage network modes (Offensive / Safe)
+- Control VPN and Tor routing
+- Monitor connected devices
+- Toggle features in real time
+- AnyKBoard is available on the Google Play Store.
+
+Ice Pi is designed to be fully usable without a laptop.
+
+All primary interactions happen through the mobile app.
+
+
 ---
 
 ## 🔐 Freedom by Design
@@ -111,8 +152,7 @@ Everything is local. Everything is auditable.
 
 ## 📜 License
 
-Ice Pi is licensed under the **GNU General Public License v3.0**.  
-See the `LICENSE` file for details.
+Ice Pi is licensed under the **GNU General Public License v3.0 or later**.
 
 ---
 
