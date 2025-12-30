@@ -29,7 +29,7 @@ def Response(ws: websockets.ServerConnection, packet):
     try:
         return (routes[packet["class"]](ws, packet))
     except Exception as err:
-        print(err)
+        print("Response", err)
         return empty()
     
 
@@ -39,6 +39,10 @@ def HIDExecutor(ws: websockets.ServerConnection, packet):
     try:
         if(packet["type"] == "key"):
             keyboard.press_combo(packet["data"])
+        elif(packet["type"] == "bulk-type"):
+            keyboard.bulk_type(packet["data"])
+        elif(packet["type"] == "bulk-paste"):
+            keyboard.bulk_type(packet["data"])
     except Exception as err:
         print("HIDExecutor:", err)
 
@@ -78,7 +82,7 @@ async def enable_interface(ws: websockets.ServerConnection, packet):
             "stamp": packet["stamp"]
         }))
     except Exception as err:
-        print(err)
+        print("views-enable_interface:", err)
         await ws.send(reject({"stamp": packet["stamp"], "dtl": str(err)}))
 
 
@@ -92,7 +96,7 @@ async def disable_interface(ws: websockets.ServerConnection, packet):
             "stamp": packet["stamp"]
         }))
     except Exception as err:
-        print(err)
+        print("views-disable_interface:", err)
         await ws.send(reject({"stamp": packet["stamp"], "dtl": str(err)}))
 
 

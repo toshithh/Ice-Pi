@@ -2,9 +2,11 @@ import os
 import re
 from dbConn import DB
 import subprocess, time
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+interface_names= "ethernet wifi ap storage hid tor"
 
 class USBGadget:
     def __init__(self):
@@ -91,7 +93,7 @@ class USBGadget:
 
     def __start(self):
         print("[Start]")
-        interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in "ethernet wifi ap storage hid tor".split()}
+        interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in interface_names.split()}
         self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"], interfaces["tor"])
 
     def __setitem__(self, key: str, value: int):
@@ -101,11 +103,13 @@ class USBGadget:
         1 -> Enable
         2 -> Bridge (wifi, ap)
         """
-        interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in "ethernet wifi ap storage hid".split()}
-        self.DB.Interfaces[key] = value
-        interfaces[key] = value
-        self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"], interfaces["tor"])
-
+        try:
+            interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in interface_names.split()}
+            self.DB.Interfaces[key] = value
+            interfaces[key] = value
+            self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"], interfaces["tor"])
+        except Exception as err:
+            print("USBGadget[...]", err)
     def __getitem__(self, key):
         return self.DB.Interfaces[key]
         
@@ -192,24 +196,27 @@ class USBGadget:
             os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop ap0 wlan0")
 
         # ========== Tor ==========
-        if tor:
-            if ap0 == 2:
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop ap0 wlan0")
-            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} forward ap0 wlan0")
-            if usb0 == 2:
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop usb0 wlan0")
-            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} forward usb0 wlan0")
-            replace_dnsmasq_servers(["127.0.0.1#5353"])
-            os.system("sudo systemctl restart hostapd")
-        else:
-            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} stop ap0 wlan0")
-            if ap0 == 2:
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward ap0 wlan0")
-            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} stop usb0 wlan0")
-            if usb0 == 2:
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward usb0 wlan0")
-            replace_dnsmasq_servers(("94.140.14.14", "94.140.15.15"))
-            os.system("sudo systemctl restart hostapd")
+        try:
+            if tor:
+                if ap0 == 2:
+                    os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop ap0 wlan0")
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} forward ap0 wlan0")
+                if usb0 == 2:
+                    os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop usb0 wlan0")
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} forward usb0 wlan0")
+                replace_dnsmasq_servers(["127.0.0.1#5353"])
+                os.system("sudo systemctl restart dnsmasq")
+            else:
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} stop ap0 wlan0")
+                if ap0 == 2:
+                    os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward ap0 wlan0")
+                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} stop usb0 wlan0")
+                if usb0 == 2:
+                    os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward usb0 wlan0")
+                replace_dnsmasq_servers(("94.140.14.14", "94.140.15.15"))
+                os.system("sudo systemctl restart dnsmasq")
+        except Exception as err:
+            print("USBGadget-__enable_interfaces-tor:", err)
         
         # Wait for module changes to settle
         time.sleep(0.5)
@@ -256,6 +263,44 @@ class USBGadget:
         else:
             self.update_cmdline_modules(add_modules=required_modules, path=path)
             print(f"[Added to cmdline.txt] All USB modules")
+
+    def wifi_scan(self, option="list", interface="wlan0"):
+        if option == "rescan":
+            os.system(f"sudo nmcli device wifi rescan ifname {interface}")
+        _aps = subprocess.run(
+            ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "device", "wifi", "list", "ifname", interface],
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        aps = []
+        for x in _aps:
+            if (x):
+                res = x.split(":")
+                aps.append({
+                    "in-use": res[0].strip(),
+                    "ssid": res[1],
+                    "strength": res[2],
+                    "auth": res[4]
+                })
+        return aps
+
+    def wifi_connect(self, ssid, password, interface="wlan0"):
+        result = subprocess.run(
+            [
+                "nmcli", "device", "wifi", "connect", ssid,
+                "password", password,
+                "ifname", interface
+            ],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            print(result.stdout)
+            return("Connected!")
+        else:
+            print(result.stderr)
+            return("Connection failed!")
+
 
 
     def reboot(self):
