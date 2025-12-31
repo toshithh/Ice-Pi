@@ -1,7 +1,7 @@
 import os
 import re
 from dbConn import DB
-import subprocess, time
+import subprocess, time, asyncio
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -264,9 +264,11 @@ class USBGadget:
             self.update_cmdline_modules(add_modules=required_modules, path=path)
             print(f"[Added to cmdline.txt] All USB modules")
 
+    
     def wifi_scan(self, option="list", interface="wlan0"):
         if option == "rescan":
             os.system(f"sudo nmcli device wifi rescan ifname {interface}")
+            asyncio.sleep(1)
         _aps = subprocess.run(
             ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "device", "wifi", "list", "ifname", interface],
             capture_output=True,
@@ -280,7 +282,7 @@ class USBGadget:
                     "in-use": res[0].strip(),
                     "ssid": res[1],
                     "strength": res[2],
-                    "auth": res[4]
+                    "auth": res[3]
                 })
         return aps
 

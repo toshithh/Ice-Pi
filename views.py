@@ -24,7 +24,8 @@ def Response(ws: websockets.ServerConnection, packet):
         "base_info": base_info,
         "enable_interface": enable_interface,
         "disable_interface": disable_interface,
-        "power_off": power_off
+        "power_off": power_off,
+        "wifi_scan": wifi_scan,
     }
     try:
         return (routes[packet["class"]](ws, packet))
@@ -53,8 +54,25 @@ def HIDExecutor(ws: websockets.ServerConnection, packet):
 ######### VIEWS #########
 
 
-async def base_info():
-    pass
+async def base_info(ws: websockets.ServerConnection, packet):
+    print("base_info")
+    await ws.send(
+        success({
+            "interfaces": {
+                "wifi": usbGadget["wifi"],
+                "ap": usbGadget["ap"],
+                "ethernet": usbGadget["ethernet"],
+                "storage": usbGadget["storage"],
+                "hid": usbGadget["hid"],
+                "tor": usbGadget["tor"],
+            },
+            "storage": {
+                "total": "",
+                "free": "",
+            },
+            "stamp": packet["stamp"]
+        })
+    )
 
 
 
@@ -113,3 +131,10 @@ async def power_off(ws: websockets.ServerConnection, packet):
             "dtl": "Rebooting!"
         }))
         usbGadget.shutdown()
+
+async def wifi_scan(ws: websockets.ServerConnection, packet):
+    print("wifi_scan")
+    await ws.send(success({
+        "stamp": packet["stamp"],
+        "wifi_list": usbGadget.wifi_scan(option=packet["category"])
+    }))

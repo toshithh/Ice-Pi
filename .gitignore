@@ -2,3 +2,4 @@ certs/
 icepi.db
 SECRETS
 .venv
+*/.DS_Store
