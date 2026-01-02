@@ -21,15 +21,15 @@ echo ""
 
 echo "[+] Writing files"
 sudo mkdir -p /var/local/IcePi
-sudo cp -r config/dnsmasq.conf /etc/dnsmasq.conf
-sudo cp -r config/hostapd.conf /etc/hostapd/hostapd.conf
-sudo cp -r config/NetworkManager.conf /etc/NetworkManager/NetworkManager.conf
-sudo cp -r config/usb-gadget-init.sh /usr/local/sbin/usb-gadget-init.sh
+sudo cp -r bash/config/dnsmasq.conf /etc/dnsmasq.conf
+sudo cp -r bash/config/hostapd.conf /etc/hostapd/hostapd.conf
+sudo cp -r bash/config/NetworkManager.conf /etc/NetworkManager/NetworkManager.conf
+sudo cp -r bash/config/usb-gadget-init.sh /usr/local/sbin/usb-gadget-init.sh
 sudo chmod +x /usr/local/sbin/usb-gadget-init.sh
-sudo cp -r service/* /etc/systemd/system
+sudo cp -r bash/service/* /etc/systemd/system
 echo '{"password": "T05h1th"}' > SECRETS
-sudo chmod +x scripts/ipForward.sh
-sudo chmod +x scripts/tor.sh
+sudo chmod +x bash/scripts/ipForward.sh
+sudo chmod +x bash/scripts/tor.sh
 sudo cp -r ./* /var/local/IcePi
 echo "[Done]"
 

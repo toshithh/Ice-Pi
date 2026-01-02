@@ -1,4 +1,4 @@
-from scripts.usbGadget import USBGadget
+from gadget.usbGadget import USBGadget
 import os
 import ssl
 from dbConn import *

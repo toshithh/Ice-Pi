@@ -1,16 +1,28 @@
 import os
 import re
+import logging
 from dbConn import DB
-import subprocess, time, asyncio
+import subprocess, time, threading, asyncio
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 interface_names= "ethernet wifi ap storage hid tor"
 
+DNSBlock = {
+    "Ads & Trackers": ["94.140.14.14", "94.140.15.15"],
+    "Malware": ["1.1.1.3"],
+    "NSFW & Malware": ["1.1.1.2"],
+    "Allow all": ["1.1.1.1", "8.8.8.8"]
+}
+
 class USBGadget:
     def __init__(self):
-        print("[USB Gadget]")
         self.DB = DB()
         self.enableGadget()
         self.__start()
@@ -39,7 +51,7 @@ class USBGadget:
             file.truncate()
 
 
-    def update_cmdline_modules(self, add_modules=None, remove_modules=None, path="scripts/test.conf"):
+    def update_cmdline_modules(self, add_modules=None, remove_modules=None, path="/boot/firmware/cmdline.txt"):
         add_modules = list(add_modules or [])
         remove_modules = set(remove_modules or [])
 
@@ -91,11 +103,12 @@ class USBGadget:
             f.write(new_cmdline)
             f.truncate()
 
+    
     def __start(self):
-        print("[Start]")
         interfaces = {x: self.DB.Interfaces[x]["enabled"] for x in interface_names.split()}
         self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"], interfaces["tor"])
 
+    
     def __setitem__(self, key: str, value: int):
         """
         Options: ethernet, wifi, ap, storage, hid
@@ -109,10 +122,10 @@ class USBGadget:
             interfaces[key] = value
             self.__enable_interfaces(interfaces["ap"], interfaces["ethernet"], interfaces["storage"], interfaces["hid"], interfaces["tor"])
         except Exception as err:
-            print("USBGadget[...]", err)
+            logging.error(f"USBGadget[${key}]\t${err}")
+    
     def __getitem__(self, key):
-        return self.DB.Interfaces[key]
-        
+        return self.DB.Interfaces[key]  
     
 
     def __enable_interfaces(self, ap0, usb0, storage, hid, tor):
@@ -125,14 +138,14 @@ class USBGadget:
         try:
             with open(f"{G}/UDC", "w") as f:
                 f.write("")
-            print("[Unbound] USB gadget")
+            logging.info("[-] Unbound USB gadget")
             time.sleep(0.3)
         except:
             pass
         
         # ========== USB ETHERNET (ECM + RNDIS) ==========
         if usb0:
-            print("[Enable] usb_ethernet")
+            logging.info("[+] Enable usb_ethernet")
             
             # Load modules
             subprocess.run(["modprobe", "usb_f_ecm"], check=False, capture_output=True)
@@ -140,17 +153,17 @@ class USBGadget:
             
             # Configure network interface
             if not os.path.exists("/etc/network/interfaces.d/usb0"):
-                os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'config', 'usb0')} /etc/network/interfaces.d")
+                os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'bash', 'config', 'usb0')} /etc/network/interfaces.d")
                 os.system("sudo systemctl restart networking")
             
             # Enable IP forwarding if bridge mode
             if usb0 == 2:
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward usb0 wlan0")
+                os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'ipForward.sh')} forward usb0 wlan0")
         else:
-            print("[Disable] usb_ethernet")
+            logging.info("[-] Disable usb_ethernet")
             
             # Stop forwarding and bring down interface
-            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop usb0 wlan0")
+            os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'ipForward.sh')} stop usb0 wlan0")
             os.system("sudo ifconfig usb0 down")
             
             # Unload modules
@@ -159,64 +172,61 @@ class USBGadget:
         
         # ========== USB MASS STORAGE ==========
         if storage:
-            print("[Enable] mass_storage")
+            logging.info("[+] Enable mass_storage")
             subprocess.run(["modprobe", "usb_f_mass_storage"], check=False, capture_output=True)
         else:
-            print("[Disable] mass_storage")
+            logging.info("[-] Disable mass_storage")
             subprocess.run(["modprobe", "-r", "usb_f_mass_storage"], check=False, capture_output=True)
         
         # ========== USB HID KEYBOARD ==========
         if hid:
-            print("[Enable] hid")
+            logging.info("[+] Enable hid")
             subprocess.run(["modprobe", "usb_f_hid"], check=False, capture_output=True)
             time.sleep(0.3)
             os.system("sudo chmod 666 /dev/hidg0 2>/dev/null")
         else:
-            print("[Disable] hid")
+            logging.info("[-] Disable hid")
             subprocess.run(["modprobe", "-r", "usb_f_hid"], check=False, capture_output=True)
         
         # ========== ACCESS POINT (AP0) ==========
         if ap0:
-            print("[Enable] AP")
+            logging.info("[+] Enable AP")
             
             if not os.path.exists("/etc/network/interfaces.d/ap0"):
-                os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'config', 'ap0')} /etc/network/interfaces.d")
+                os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'bash', 'config', 'ap0')} /etc/network/interfaces.d")
                 os.system("sudo systemctl restart networking")
             
             if not os.path.exists("/etc/systemd/system/ap-interface.service"):
-                os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'service', 'ap-interface.service')} /etc/systemd/system")
+                os.system(f"sudo cp -r {os.path.join(BASE_DIR, 'bash', 'service', 'ap-interface.service')} /etc/systemd/system")
                 os.system("sudo systemctl enable --now ap-interface.service")
                 os.system("sudo systemctl restart networking")
             if ap0 == 2:
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward ap0 wlan0")
+                os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'ipForward.sh')} forward ap0 wlan0")
         else:
-            print("[Disable] AP")
+            logging.info("[-] Disable AP")
             os.system("sudo ifconfig ap0 down")
             os.system("sudo systemctl disable --now ap-interface.service")
-            os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop ap0 wlan0")
+            os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'ipForward.sh')} stop ap0 wlan0")
 
         # ========== Tor ==========
-        try:
-            if tor:
-                if ap0 == 2:
-                    os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop ap0 wlan0")
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} forward ap0 wlan0")
-                if usb0 == 2:
-                    os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} stop usb0 wlan0")
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} forward usb0 wlan0")
-                replace_dnsmasq_servers(["127.0.0.1#5353"])
-                os.system("sudo systemctl restart dnsmasq")
-            else:
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} stop ap0 wlan0")
-                if ap0 == 2:
-                    os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward ap0 wlan0")
-                os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'tor.sh')} stop usb0 wlan0")
-                if usb0 == 2:
-                    os.system(f"sudo {os.path.join(BASE_DIR, 'scripts', 'ipForward.sh')} forward usb0 wlan0")
-                replace_dnsmasq_servers(("94.140.14.14", "94.140.15.15"))
-                os.system("sudo systemctl restart dnsmasq")
-        except Exception as err:
-            print("USBGadget-__enable_interfaces-tor:", err)
+        if tor:
+            if ap0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'ipForward.sh')} stop ap0 wlan0")
+            os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'tor.sh')} forward ap0 wlan0")
+            if usb0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'ipForward.sh')} stop usb0 wlan0")
+            os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'tor.sh')} forward usb0 wlan0")
+            replace_dnsmasq_servers(["127.0.0.1#5353"])
+            os.system("sudo systemctl restart dnsmasq")
+        else:
+            os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'tor.sh')} stop ap0 wlan0")
+            if ap0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'ipForward.sh')} forward ap0 wlan0")
+            os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'tor.sh')} stop usb0 wlan0")
+            if usb0 == 2:
+                os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'ipForward.sh')} forward usb0 wlan0")
+            replace_dnsmasq_servers(("94.140.14.14", "94.140.15.15"))
+            os.system("sudo systemctl restart dnsmasq")
         
         # Wait for module changes to settle
         time.sleep(0.5)
@@ -229,12 +239,11 @@ class USBGadget:
         )
         
         if result.returncode == 0:
-            print("[Restarted] USB gadget service")
+            logging.info("[+] Restarted USB gadget service")
         else:
-            print(f"[Error] Failed to restart gadget: {result.stderr}")
+            logging.error(f"[-] Error Failed to restart gadget: {result.stderr}")
 
-
-            
+    
     def _ensure_modules_in_cmdline(self):
         """
         Ensure all USB function modules are loaded at boot
@@ -258,32 +267,46 @@ class USBGadget:
                     
                     if missing:
                         self.update_cmdline_modules(add_modules=missing, path=path)
-                        print(f"[Added to cmdline.txt] {', '.join(missing)}")
+                        logging.info(f"[+] Added to cmdline.txt {', '.join(missing)}")
                     break
         else:
             self.update_cmdline_modules(add_modules=required_modules, path=path)
-            print(f"[Added to cmdline.txt] All USB modules")
+            logging.info(f"[+] Added to cmdline.txt All USB modules")
 
     
-    def wifi_scan(self, option="list", interface="wlan0"):
+    async def wifi_scan(self, option="list", interface="wlan0"):
         if option == "rescan":
-            os.system(f"sudo nmcli device wifi rescan ifname {interface}")
-            asyncio.sleep(1)
-        _aps = subprocess.run(
-            ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "device", "wifi", "list", "ifname", interface],
-            capture_output=True,
-            text=True,
-        ).stdout.splitlines()
+            threading.Thread(
+                target=lambda: os.system(f"nmcli device wifi rescan ifname {interface}"),
+                daemon=True
+            ).start()
+
+        loop = asyncio.get_running_loop()
+
+        def _list():
+            return subprocess.run(
+                ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY",
+                "device", "wifi", "list", "ifname", interface],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            ).stdout.splitlines()
+
+        _aps = await loop.run_in_executor(None, _list)
+
         aps = []
         for x in _aps:
-            if (x):
-                res = x.split(":")
+            if not x:
+                continue
+            res = x.split(":")
+            if len(res) >= 4:
                 aps.append({
                     "in-use": res[0].strip(),
                     "ssid": res[1],
                     "strength": res[2],
-                    "auth": res[3]
+                    "auth": res[3],
                 })
+
         return aps
 
     def wifi_connect(self, ssid, password, interface="wlan0"):
@@ -297,12 +320,24 @@ class USBGadget:
             text=True
         )
         if result.returncode == 0:
-            print(result.stdout)
+            logging.info(f"USBGadget:wifi_connect\t${result.stdout}")
             return("Connected!")
         else:
-            print(result.stderr)
+            logging.error(f"USBGadget:wifi_connect\t${result.stderr}")
             return("Connection failed!")
 
+
+    def changeDNS(self, value):
+        try:
+            if value in DNSBlock.keys():
+                self.DB.Settings["DNSBlock"] = value
+                replace_dnsmasq_servers(DNSBlock[value])
+                logging.info(f"USBGadget:ChangeDNS\tDNS changed to ${value}:${DNSBlock[value]}")
+            return True
+        except Exception as err:
+            logging.error(f"USBGadget:ChangeDNS\t${err}")
+            return False
+        
 
 
     def reboot(self):
@@ -314,8 +349,7 @@ class USBGadget:
 
 def replace_dnsmasq_servers(servers, conf_path="/etc/dnsmasq.conf"):
     """
-    Replace all 'server=' lines in a dnsmasq config file
-    with the supplied list of server IPs.
+    Replace all 'server=' lines in dnsmasq
     """
     with open(conf_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
