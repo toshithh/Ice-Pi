@@ -38,6 +38,7 @@ def Response(ws: websockets.ServerConnection, packet):
         "power_off": power_off,
         "wifi_scan": wifi_scan,
         "change_dns": change_dns,
+        "wifi_connect": wifi_connect
     }
     try:
         return (routes[packet["class"]](ws, packet))
@@ -159,12 +160,27 @@ async def wifi_scan(ws: websockets.ServerConnection, packet):
         logging.error(f"Response:wifi_scan\t{packet['category']}\t{err}")
         await error(ws, packet, str(err))
 
+async def wifi_connect(ws: websockets.ServerConnection, packet):
+    try:
+        connection = usbGadget.wifi_connect(packet["ssid"], packet["password"])
+        if connection == True:
+            await ws.send(success({
+                "stamp": packet["stamp"],
+                "msg": "Connected"
+            }))
+        else:
+            await error(ws, packet, connection)
+    except Exception as err:
+        logging.error(f"Request:wifi_scan\t{packet['ssid']}\t{err}")
+        await error(ws, packet, str(err))
+
 
 async def change_dns(ws: websockets.ServerConnection, packet):
-    logging.info(f"Response:ChangeDNS\tTO: {packet['data']}")
+    logging.info(f"Request:ChangeDNS\tTO: {packet['data']}")
     try:
-        usbGadget.changeDNS(packet["value"])
+        usbGadget.changeDNS(packet["data"])
+        await ws.send(success({"stamp": packet["stamp"]}))
     except Exception as err:
-        logging.error(f"Response:ChangeDNS\t{packet['data']}\t{err}")
+        logging.error(f"Request:ChangeDNS\t{packet['data']}\t{err}")
         await error(ws, packet, str(err))
         

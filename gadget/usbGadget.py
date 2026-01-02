@@ -311,22 +311,34 @@ class USBGadget:
                 ).start()
         return aps
 
-    def wifi_connect(self, ssid, password, interface="wlan0"):
+    def wifi_connect(self, ssid, password=None, interface="wlan0"):
+        cmd = [
+            "nmcli", "device", "wifi", "connect", f"{ssid}",
+        ]
+        if password:
+            cmd.extend(["password", password])
+        
         result = subprocess.run(
-            [
-                "nmcli", "device", "wifi", "connect", ssid,
-                "password", password,
-                "ifname", interface
-            ],
+            cmd,
             capture_output=True,
-            text=True
+            text=True,
+            timeout=10
         )
+        print(result)
         if result.returncode == 0:
-            logging.info(f"USBGadget:wifi_connect\t${result.stdout}")
-            return("Connected!")
+            logging.info(f"USBGadget:wifi_connect\t{result.stdout}")
+            return True
         else:
-            logging.error(f"USBGadget:wifi_connect\t${result.stderr}")
-            return("Connection failed!")
+            try:
+                result = subprocess.run(
+                    ["nmcli", "connection", "delete", ssid],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                    )
+            except: pass
+            logging.error(f"USBGadget:wifi_connect\t{result.stderr}")
+            return result.stderr
 
 
     def changeDNS(self, value: str):
@@ -337,7 +349,7 @@ class USBGadget:
                 logging.info(f"USBGadget:ChangeDNS\tDNS changed to ${value}:${DNSBlock[value]}")
             return True
         except Exception as err:
-            logging.error(f"USBGadget:ChangeDNS\t${err}")
+            logging.error(f"USBGadget:ChangeDNS\t{err}")
             return False
         
 
