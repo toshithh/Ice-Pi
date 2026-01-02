@@ -4,6 +4,7 @@ import websockets
 from gadget.keyboard import KeyboardExecutor
 import logging
 import asyncio
+from gadget.usbGadget import DNSBlock
 
 
 logging.basicConfig(
@@ -21,12 +22,14 @@ def success(payload):
     payload["type"] = "success"
     return json.dumps(payload)
 
+async def error(ws:websockets, packet, err=""):
+    return await ws.send({"stamp": packet["stamp"], "type": "error", "msg": str(err)})
+
 
 ######### Main Functions #########
 
 def Response(ws: websockets.ServerConnection, packet):
-    async def empty():
-        return
+    
     routes = {
         "interface_info": interface_info,
         "base_info": base_info,
@@ -40,7 +43,7 @@ def Response(ws: websockets.ServerConnection, packet):
         return (routes[packet["class"]](ws, packet))
     except Exception as err:
         print("Response", err)
-        return empty()
+        return error(ws, packet, str(err))
     
 
 keyboard = KeyboardExecutor()
@@ -80,15 +83,15 @@ async def base_info(ws: websockets.ServerConnection, packet):
                     "total": "",
                     "free": "",
                 },
-                #"public_ip": await get_pub_ip(False),
                 "dns_block": db.Settings["DNSBlock"],
+                "dns_options": list(DNSBlock.keys()),
                 "stamp": packet["stamp"]
             })
         )
     except Exception as err:
         logging.error(f"Request:base_info\t${err}")
         print(err)
-        await ws.send(reject({"stamp": packet["stamp"]}))
+        await error(ws, packet, str(err))
 
 
 
@@ -115,7 +118,7 @@ async def enable_interface(ws: websockets.ServerConnection, packet):
         }))
     except Exception as err:
         logging.error(f"Request:enable_interface\t${err}")
-        await ws.send({"stamp": packet["stamp"], "type": "error", "msg": str(err)})
+        await error(ws, packet, str(err))
 
 
 async def disable_interface(ws: websockets.ServerConnection, packet):
@@ -127,7 +130,7 @@ async def disable_interface(ws: websockets.ServerConnection, packet):
         }))
     except Exception as err:
         logging.error(f"Request:disable_interface\t${err}")
-        await ws.send(reject({"stamp": packet["stamp"], "dtl": str(err)}))
+        await error(ws, packet, str(err))
 
 
 async def power_off(ws: websockets.ServerConnection, packet):
@@ -147,13 +150,21 @@ async def power_off(ws: websockets.ServerConnection, packet):
         usbGadget.shutdown()
 
 async def wifi_scan(ws: websockets.ServerConnection, packet):
-    logging.info(f"Response:wifi_scan\t${packet['category']}")
-    await ws.send(success({
-        "stamp": packet["stamp"],
-        "wifi_list": await usbGadget.wifi_scan(option=packet["category"])
-    }))
+    try:
+        await ws.send(success({
+            "stamp": packet["stamp"],
+            "wifi_list": await usbGadget.wifi_scan(option=packet["category"])
+        }))
+    except Exception as err:
+        logging.error(f"Response:wifi_scan\t{packet['category']}\t{err}")
+        await error(ws, packet, str(err))
 
 
 async def change_dns(ws: websockets.ServerConnection, packet):
-    logging.info(f"Response:ChangeDNS\tTO: ${packet['data']}")
-    usbGadget.changeDNS()
+    logging.info(f"Response:ChangeDNS\tTO: {packet['data']}")
+    try:
+        usbGadget.changeDNS(packet["value"])
+    except Exception as err:
+        logging.error(f"Response:ChangeDNS\t{packet['data']}\t{err}")
+        await error(ws, packet, str(err))
+        

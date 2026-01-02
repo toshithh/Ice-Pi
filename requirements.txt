@@ -2,3 +2,4 @@ websockets
 asyncio
 aiohttp
 aiohttp-socks
+requests[socks]

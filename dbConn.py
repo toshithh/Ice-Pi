@@ -15,12 +15,12 @@ logging.basicConfig(
 async def get_pub_ip(tor=True):
     try:
         if tor:
-            connector = ProxyConnector.from_url("socks5://127.0.0.1:9050", timeout=5)
+            connector = ProxyConnector.from_url("socks5://127.0.0.1:9050")
         else:
             connector = None
 
         async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get("https://api.ipify.org", timeout=5) as resp:
+            async with session.get("https://api.ipify.org") as resp:
                 return (await resp.text()).replace("'", "").replace("b", '').strip()
     except Exception as err:
         logging.error(f"get_pub_ip\t${err}")

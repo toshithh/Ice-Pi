@@ -26,6 +26,7 @@ class USBGadget:
         self.DB = DB()
         self.enableGadget()
         self.__start()
+        self.last_scan = time.time()
         
 
     def enableGadget(self):
@@ -225,7 +226,7 @@ class USBGadget:
             os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'tor.sh')} stop usb0 wlan0")
             if usb0 == 2:
                 os.system(f"sudo {os.path.join(BASE_DIR, 'bash', 'scripts', 'ipForward.sh')} forward usb0 wlan0")
-            replace_dnsmasq_servers(("94.140.14.14", "94.140.15.15"))
+            replace_dnsmasq_servers(DNSBlock[self.DB.Settings["DNSBlock"]])
             os.system("sudo systemctl restart dnsmasq")
         
         # Wait for module changes to settle
@@ -275,25 +276,19 @@ class USBGadget:
 
     
     async def wifi_scan(self, option="list", interface="wlan0"):
-        if option == "rescan":
-            threading.Thread(
-                target=lambda: os.system(f"nmcli device wifi rescan ifname {interface}"),
-                daemon=True
-            ).start()
-
         loop = asyncio.get_running_loop()
-
         def _list():
-            return subprocess.run(
-                ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY",
-                "device", "wifi", "list", "ifname", interface],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            ).stdout.splitlines()
-
+            try:
+                return subprocess.run(
+                    ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY",
+                    "device", "wifi", "list", "ifname", interface, "--rescan", "no"],
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
+                ).stdout.splitlines()
+            except:
+                return []
         _aps = await loop.run_in_executor(None, _list)
-
         aps = []
         for x in _aps:
             if not x:
@@ -306,7 +301,14 @@ class USBGadget:
                     "strength": res[2],
                     "auth": res[3],
                 })
-
+        if option == "rescan":
+            ls = time.time()
+            if ls - self.last_scan > 5:
+                self.last_scan = ls
+                threading.Thread(
+                    target=lambda: os.system(f"nmcli device wifi rescan ifname {interface}"),
+                    daemon=True
+                ).start()
         return aps
 
     def wifi_connect(self, ssid, password, interface="wlan0"):
@@ -327,7 +329,7 @@ class USBGadget:
             return("Connection failed!")
 
 
-    def changeDNS(self, value):
+    def changeDNS(self, value: str):
         try:
             if value in DNSBlock.keys():
                 self.DB.Settings["DNSBlock"] = value
