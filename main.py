@@ -10,6 +10,7 @@ from views import *
 async def handler(ws: websockets.ServerConnection):
     print("Client connected")
     await ws.send(json.dumps({"type": "connected"}))
+    shell = Shell(ws, asyncio.get_running_loop())
     try:
         # ---- AUTH ----
         auth = json.loads(await ws.recv())
@@ -22,19 +23,21 @@ async def handler(ws: websockets.ServerConnection):
             return
         await ws.send(success({"msg": "Authenticated"}))
         print("Authenticated")
-        #shell = Shell(ws)
         async for message in ws:
+            print("DEBUG: ",message)
             packet = json.loads(message)
+            print(type(packet))
             if packet["type"] == "ping":
                 await ws.send(success({"class": "pong"}))
             elif packet["type"] == "terminal":
-                pass #await shell.write_pty(packet["cmd"])
+                shell.write_pty(packet["cmd"])
             elif packet["type"] == "request":
                 await Response(ws, packet)
             else:
                 HIDExecutor(ws, packet)
     except Exception as e:
         print("WS closed:", e)
+    finally:    shell.close()
 
 
 async def start_ws():

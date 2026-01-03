@@ -89,6 +89,7 @@ async def base_info(ws: websockets.ServerConnection, packet):
                 "stamp": packet["stamp"]
             })
         )
+        db.Interfaces._async_update_wrapper()
     except Exception as err:
         logging.error(f"Request:base_info\t${err}")
         print(err)

@@ -58,6 +58,9 @@ class Interfaces:
     def __init__(self, CONN: sqlite3.Connection, cursor: sqlite3.Cursor):
         self.cursor = cursor
         self.CONN = CONN
+        self._async_update_wrapper()
+    
+    def _async_update_wrapper(self):
         threading.Thread(target=self.update_interfaces).start()
 
     def update_interfaces(self):

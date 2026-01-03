@@ -312,6 +312,14 @@ class USBGadget:
         return aps
 
     def wifi_connect(self, ssid, password=None, interface="wlan0"):
+        try:
+                subprocess.run(
+                    ["nmcli", "connection", "delete", ssid],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                    )
+        except: pass
         cmd = [
             "nmcli", "device", "wifi", "connect", f"{ssid}",
         ]
@@ -324,13 +332,12 @@ class USBGadget:
             text=True,
             timeout=10
         )
-        print(result)
         if result.returncode == 0:
             logging.info(f"USBGadget:wifi_connect\t{result.stdout}")
             return True
         else:
             try:
-                result = subprocess.run(
+                subprocess.run(
                     ["nmcli", "connection", "delete", ssid],
                     capture_output=True,
                     text=True,
