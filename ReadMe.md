@@ -1,84 +1,86 @@
 # 🧊 Ice Pi  
-**A mobile GNU/Linux network offense & defense platform**
+**A mobile GNU/Linux network security & privacy platform**
 
 <center>
   <img src="assets/rpi.png">
 </center>
 
-Ice Pi is a **GNU GPL–licensed**, mobile-controlled **Kali Linux–powered network security device**.  
-It is designed for people who **break networks to understand them** — and for those who want to **carry a trusted network with them everywhere**.
+Ice Pi is a **GNU GPL–licensed**, mobile-controlled **Linux network security device** designed to help users **protect their devices and traffic on untrusted networks**.
+
+It is built for people who want **full visibility and control over their network traffic**, whether operating in public environments or managing their own isolated networks.
 
 Ice Pi turns a **Raspberry Pi Zero** into:
-- **A full red-team / penetration-testing platform**
-- **A hardened personal network gateway for hostile environments**
+- **A hardened personal network gateway for untrusted environments**
+- **A configurable network security and analysis platform**
 
-No cloud. No lock-in. No black boxes.
+No cloud. No lock-in. No hidden telemetry.
 
-\* The image is an AI Generated Illustration
+* The image is an AI-generated illustration.
 
 ---
 
 ## ⚠️ Legal & Ethical Use
 
 Ice Pi is intended for:
-- Network hardening and privacy protection
-- Personal device security on untrusted networks
-- Authorized penetration testing
-- Security research and education
+- Network hardening and privacy protection  
+- Personal device security on untrusted networks  
+- Defensive network analysis 
+- To convert phone into a Keyboard for PC  
+- Security education and research  
 
-You are responsible for how you use it.  
-Do not target networks or devices without explicit permission.
-
----
-
-## 🔴 Offensive Security (OffSec)
-
-Ice Pi is **not** a toy device or a limited attack gadget.  
-It runs **full Kali Linux**.
-
-**Offensive capabilities**
-- USB HID emulation (keyboard / mouse)
-- Rubber Ducky–style payload execution
-- USB mass storage emulation
-- Rogue access points and Wi-Fi spoofing
-- Network traffic interception and takeover
-- Wi-Fi jamming*  
-- Payload-driven automation
-- Mobile-controlled red-team operations
-
-If a tool runs on Kali, it runs on Ice Pi.
+You are responsible for complying with local laws and regulations.  
+Do not interfere with networks or devices you do not own or have permission to manage.
 
 ---
 
 ## 🛡️ Network Safety & Privacy
 
-Ice Pi is also a **portable network firewall**.
+Ice Pi is designed to act as a **trusted intermediary** between user devices and external networks.
 
-It allows you to:
+It allows users to:
+
 - Route all connected device traffic through:
-  - Secure VPN
-  - Tor
-- Spawn isolated, hardened Wi-Fi networks
-- Act as a trusted gateway on public Wi-Fi
-- Shield laptops and phones from hostile networks
-- Block ads, trackers, and malicious domains at the network level
-- Inspect and control traffic before it reaches your devices
+  - Secure VPN gateways
+  - Optional Tor routing for anonymity and censorship resistance
+- Create isolated, hardened Wi-Fi networks
+- Act as a secure gateway on public Wi-Fi
+- Protect laptops, tablets, and phones from hostile or compromised networks
+- Enforce strict DNS policies to reduce spoofing risks
+- Block ads, trackers, and known malicious domains at the network level
+- Inspect and control traffic before it reaches user devices
+- Use USB-Ethernet as a secure wired gateway
+- Act as a Keyboard that can be controlled via smartphone  
 
-You don’t connect to networks.  
-You **bring your own**.
+You don’t connect directly to unknown networks.  
+You **bring your own controlled network**.
 
 ---
 
-## 🔄 One Device, Two Mindsets
+## 🔍 Network Analysis & Advanced Configuration
 
-Ice Pi is built on the idea that **offense and defense are the same discipline**.
+Ice Pi runs on a **full GNU/Linux environment**, allowing advanced users to:
 
-- Simulate hostile networks  
-- Defend against hostile networks  
-- Test assumptions  
-- Control your traffic  
+- Inspect traffic flows for misconfiguration or exposure
+- Analyze DNS and routing behavior
+- Validate encryption and transport security
+- Apply custom firewall and routing rules
+- Perform defensive testing on user-owned networks
 
-Everything is local. Everything is auditable.
+All configuration is local, transparent, and user-controlled.
+
+---
+
+## 🔄 One Device, One Control Surface
+
+Ice Pi is built on the principle that **visibility, control, and isolation** are foundational to network security.
+
+- Centralized traffic control  
+- Explicit routing decisions  
+- Auditable configuration  
+- No background services  
+
+Everything runs locally.  
+Everything can be inspected.
 
 ---
 
@@ -87,77 +89,71 @@ Everything is local. Everything is auditable.
 | Feature | **Ice Pi** | Hak5 Devices | P4wnP1 |
 |------|-------|--------|--------|
 | GNU GPL Licensed | ✅ | ❌ | ❌ |
-| Fully Open | ✅ | ❌ | ✅ |
+| Fully Open Source | ✅ | ❌ | ✅ |
 | Mobile App Control | ✅ | ⚠️ Limited | ❌ |
-| Full Kali Linux | ✅ | ❌ | ⚠️ Partial |
-| USB HID Attacks | ✅ | ✅ | ✅ |
-| Rubber Ducky Support | ✅ | ✅ | ✅ |
-| Rogue AP / Spoofing | ✅ | ⚠️ | ⚠️ |
-| Wi-Fi Jamming* | ✅ | ❌ | ❌ |
-| Network Traffic Hijacking | ✅ | ⚠️ | ⚠️ |
-| VPN Gateway | ✅ | ❌ | ❌ |
+| Full GNU/Linux Environment | ✅ | ❌ | ⚠️ Partial |
+| Network Gateway Mode | ✅ | ❌ | ⚠️ |
+| VPN Routing | ✅ | ❌ | ❌ |
 | Tor Routing | ✅ | ❌ | ❌ |
 | Safe Public Wi-Fi Gateway | ✅ | ❌ | ❌ |
 | No Vendor Lock-in | ✅ | ❌ | ✅ |
 
-\* Where legally permitted.
-
------ 
+---
 
 ## ⚙️ Installation
-On a fresh install of Kali Linux on Raspberry Pi, execute:
-```
+
+On a fresh installation of Kali Linux on Raspberry Pi, execute:
+
+```bash
 git clone https://github.com/toshithh/Ice-Pi.git
 cd Ice-Pi
 sudo chmod +x install.sh
 sudo ./install.sh
 ```
+
 The installer:
-- Sets up the Kali Linux environment
-- Configures USB gadget modes (HID, storage, USB Ethernet)
-- Initializes networking, routing, and isolation
-- Prepares Ice Pi for mobile control
+- Prepares the GNU/Linux environment
+- Configures networking and isolation
+- Sets up routing, DNS, and gateway services
+- Prepares the device for mobile management
 
-The **default credentials** are:
-- Connection password: `T05h1th`
+**Default credentials (change after install):**
 - SSID: `IcePi`
-- WPA-Passphrase: `T05h1thS1c3`
+- WPA Passphrase: `T05h1thS1c3`
+- Connection password: `T05h1th`
 
-\* A reboot may be required after installation.
+* A reboot may be required.
 
 ---
 
-## 📱 AnyKBoard - Mobile App
-Ice Pi is controlled using the AnyKBoard mobile application.
+## 📱 AnyKBoard — Mobile App
+
+Ice Pi is managed using the **AnyKBoard** mobile application.
 
 <center><img src="assets/akb.png" width="200"></center>
 
-The app is used to:
-- Securely connect to Ice Pi
-- Execute HID and payload actions
-- Manage network modes (Offensive / Safe)
-- Control VPN and Tor routing
+The app allows users to:
+- Securely connect to their Ice Pi device
+- Enable or disable networking features
+- Manage VPN and Tor routing
 - Monitor connected devices
-- Toggle features in real time
-- AnyKBoard is available on the Google Play Store.
+- Apply security policies in real time
 
-Ice Pi is designed to be fully usable without a laptop.
+Ice Pi is designed to be fully usable **without a laptop**.
 
-All primary interactions happen through the mobile app.
-
-The app is currently in Beta testing. Early users/testers can reach out to me to get added to Goolgle Play Testers through [Discord](https://discord.com/invite/jzrhqnWUEV) or wait for a week 😉.
-
+The app is currently in **beta testing**.  
+Early users can request access via Discord or wait for public availability.
 
 ---
 
 ## 🔐 Freedom by Design
 
-- GNU GPL licensed
-- No telemetry
-- No forced updates
-- No cloud dependencies
-- No hidden firmware
-- User controls every packet
+- GNU GPL licensed  
+- No telemetry  
+- No forced updates  
+- No cloud dependencies  
+- No hidden firmware  
+- User controls every packet  
 
 ---
 
