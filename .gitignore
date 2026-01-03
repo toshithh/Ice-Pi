@@ -3,3 +3,5 @@ icepi.db
 SECRETS
 .venv
 */.DS_Store
+IcePi/
+IcePi.deb
