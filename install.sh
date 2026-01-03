@@ -74,7 +74,11 @@ echo "[Done]"
 echo ""
 
 echo "[+] Restarting services"
-sudo systemctl restart NetworkManager || sudo systemctl restart networking || sudo systemctl restart dnsmasq || sudo systemctl restart hostapd || sudo systemctl restart tor
+systemctl try-restart NetworkManager || true
+systemctl try-restart hostapd || true
+systemctl try-restart dnsmasq || true
+systemctl try-restart usb-gadget.service || true
+systemctl try-restart ice-pi.service || true
 echo "[Done]"
 
 echo ""

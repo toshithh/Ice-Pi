@@ -121,7 +121,7 @@ On a fresh installation of Kali Linux on Raspberry Pi,
   ```bash
   wget https://github.com/toshithh/Ice-Pi/releases/download/IcePi/IcePi.deb
   
-  sudo apt install IcePi.deb
+  sudo apt install ./IcePi.deb
   ```
 
 The installer:
