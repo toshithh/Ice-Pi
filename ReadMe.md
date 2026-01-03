@@ -102,14 +102,27 @@ Everything can be inspected.
 
 ## ⚙️ Installation
 
-On a fresh installation of Kali Linux on Raspberry Pi, execute:
+On a fresh installation of Kali Linux on Raspberry Pi,
 
-```bash
-git clone https://github.com/toshithh/Ice-Pi.git
-cd Ice-Pi
-sudo chmod +x install.sh
-sudo ./install.sh
-```
+- To resolve dependencies:
+  ```bash
+  sudo apt-get install -y net-tools openvpn
+  sudo apt-get install -y python3 python3-pip python3-venv
+  sudo apt-get install -y hostapd dnsmasq
+  sudo apt-get -y install tor
+  ```
+  OR 
+  download the `dependencies.sh` file and
+  ```bash
+  chmod +x dependencies.sh
+  ./dependencies.sh
+  ```
+- To install
+  ```bash
+  wget https://github.com/toshithh/Ice-Pi/releases/download/IcePi/IcePi.deb
+  
+  sudo apt install IcePi.deb
+  ```
 
 The installer:
 - Prepares the GNU/Linux environment
