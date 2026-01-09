@@ -23,12 +23,12 @@ mountpoint -q $CFG || mount -t configfs none $CFG
 if [ -d "$G" ]; then
     echo "Cleaning up existing gadget..."
     echo "" > $G/UDC 2>/dev/null || true
-    rm -f $G/configs/c.1/ecm.usb0 2>/dev/null || true
+    rm -f $G/configs/c.1/ncm.usb0 2>/dev/null || true
     rm -f $G/configs/c.1/rndis.usb0 2>/dev/null || true
     rm -f $G/configs/c.1/hid.usb0 2>/dev/null || true
     rm -f $G/configs/c.1/mass_storage.usb0 2>/dev/null || true
     rm -f $G/os_desc/c.1 2>/dev/null || true
-    rmdir $G/functions/ecm.usb0 2>/dev/null || true
+    rmdir $G/functions/ncm.usb0 2>/dev/null || true
     rmdir $G/functions/rndis.usb0 2>/dev/null || true
     rmdir $G/functions/hid.usb0 2>/dev/null || true
     rmdir $G/functions/mass_storage.usb0 2>/dev/null || true
@@ -63,13 +63,13 @@ echo 1 > $G/os_desc/use
 echo 0xcd > $G/os_desc/b_vendor_code
 echo "MSFT100" > $G/os_desc/qw_sign
 
-# ---------- Ethernet: ECM (Linux/macOS) ----------
-if [ "$ENABLE_ETHERNET" = "true" ] && [ -d /sys/module/usb_f_ecm ]; then
-    echo "Adding ECM ethernet..."
-    mkdir -p $G/functions/ecm.usb0
-    echo "48:6f:73:74:50:43" > $G/functions/ecm.usb0/host_addr
-    echo "42:61:64:55:53:42" > $G/functions/ecm.usb0/dev_addr
-    ln -s $G/functions/ecm.usb0 $G/configs/c.1/
+# ---------- Ethernet: NCM (Linux/macOS) ----------
+if [ "$ENABLE_ETHERNET" = "true" ] && [ -d /sys/module/usb_f_ncm ]; then
+    echo "Adding NCM ethernet..."
+    mkdir -p $G/functions/ncm.usb0
+    echo "48:6f:73:74:50:43" > $G/functions/ncm.usb0/host_addr
+    echo "42:61:64:55:53:42" > $G/functions/ncm.usb0/dev_addr
+    ln -s $G/functions/ncm.usb0 $G/configs/c.1/
 fi
 
 # ---------- Ethernet: RNDIS (Windows) ----------
