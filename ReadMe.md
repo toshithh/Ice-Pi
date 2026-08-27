@@ -1,8 +1,8 @@
 # 🧊 Ice Pi  
 **A mobile GNU/Linux network security & privacy platform**
 
-### \*This project has become a part of [CyberMyth OS](https://cybermyth.dev) for Raspberry PI.
-The current repository belongs to the legacy project, please download and flash [CyberMyth OS](https://cybermyth.dev) for raspberry Pi which is maintained regularly with the latest security updates. This project can still be used with the AnyKBoard app.
+> ### This project has become a part of [CyberMyth OS](https://cybermyth.dev) for Raspberry PI.
+> The current repository belongs to the legacy project, please download and flash [CyberMyth OS](https://cybermyth.dev) for raspberry Pi which is maintained regularly with the latest security updates. This project can still be used with the AnyKBoard app.
 
 <center>
   <img src="assets/rpi.png">
